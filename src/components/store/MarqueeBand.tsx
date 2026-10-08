@@ -1,4 +1,4 @@
-const words = ["Recupere", "Relaxe", "Repita", "Calor", "Massagem", "Air Zoom"];
+const words = ["Recupere", "Relaxe", "Renove", "Calor", "Massagem", "Air Zoom"];
 
 function Row({ reverse, className }: { reverse?: boolean; className: string }) {
   const content = (
