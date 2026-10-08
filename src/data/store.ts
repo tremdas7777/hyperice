@@ -1,0 +1,258 @@
+// ─────────────────────────────────────────────────────────────
+// CONFIGURAÇÃO DA LOJA — edite aqui nome, preço, variantes,
+// imagens, textos e checkout. Todo o site lê deste arquivo.
+// ─────────────────────────────────────────────────────────────
+
+export const store = {
+  name: "RECOVR",
+  showLogo: false, // mostra o nome acima como logo no cabeçalho e no rodapé
+  tagline: "Recovery wear",
+  whatsapp: "", // ex.: '5511999999999' — usado no checkout via WhatsApp e no botão de ajuda
+  instagram: "", // ex.: 'https://instagram.com/sualoja'
+  email: "", // ex.: 'contato@sualoja.com.br'
+  cnpj: "", // ex.: '00.000.000/0001-00'
+  announcements: [
+    "Frete grátis para todo o Brasil",
+    "12x sem juros no cartão",
+    "5% de desconto no Pix",
+    "Troca fácil em até 7 dias",
+  ],
+};
+
+// Checkout:
+//  - 'whatsapp': envia o pedido (cor, tamanho, qtd) para o WhatsApp acima
+//  - 'link': redireciona para o checkout externo (Yampi, Cartpanda, Shopify…)
+//            usando o `checkoutUrl` de cada variante (cor + tamanho)
+export const checkout = {
+  mode: "whatsapp" as "whatsapp" | "link",
+};
+
+const NIKE_PDP = (id: string, preset = "t_web_pdp_936_v2") =>
+  `https://static.nike.com/a/images/${preset}/f_auto,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/${id}/Nike+Air+Zoom+Hyperslide.png`;
+
+const NIKE_EDITORIAL = (id: string, size: string) =>
+  `https://static.nike.com/a/images/f_auto/dpr_1.0,cs_srgb/${size},c_limit/${id}/nike-air-zoom-hyperslide-the-nike-x-hyperice-recovery-slide-explained.jpg`;
+
+export type ProductImage = { src: string; thumb: string; alt: string };
+type Gallery = [ProductImage, ...ProductImage[]];
+
+const gallery = (ids: [string, ...string[]], colorName: string): Gallery =>
+  ids.map((id, i) => ({
+    src: NIKE_PDP(id),
+    thumb: NIKE_PDP(id, "t_PDP_144_v1"),
+    alt: `Nike Air Zoom Hyperslide ${colorName} — foto ${i + 1}`,
+  })) as Gallery;
+
+export type ColorVariant = {
+  id: string;
+  name: string;
+  style: string;
+  swatch: string;
+  images: Gallery;
+  // Vídeo turntable 360° em loop (pasta public/videos). Sem vídeo, mostra a foto.
+  spin360?: string;
+};
+
+export type SizeVariant = {
+  br: string;
+  usM: string;
+  usW: string;
+  cm: string;
+};
+
+export const sizes: SizeVariant[] = [
+  { br: "35", usM: "4", usW: "5", cm: "22" },
+  { br: "36", usM: "5", usW: "6", cm: "23" },
+  { br: "37", usM: "6", usW: "7", cm: "24" },
+  { br: "38", usM: "7", usW: "8", cm: "25" },
+  { br: "39/40", usM: "8", usW: "9", cm: "26" },
+  { br: "41", usM: "9", usW: "10", cm: "27" },
+  { br: "42", usM: "10", usW: "11", cm: "28" },
+  { br: "43", usM: "11", usW: "12", cm: "29" },
+  { br: "44", usM: "12", usW: "13", cm: "30" },
+  { br: "45", usM: "13", usW: "14", cm: "31" },
+  { br: "46", usM: "14", usW: "15", cm: "32" },
+  { br: "47", usM: "15", usW: "16", cm: "33" },
+  { br: "48", usM: "16", usW: "17", cm: "34" },
+];
+
+export const colors: ColorVariant[] = [
+  {
+    id: "preto",
+    name: "Preto",
+    style: "66000-001",
+    swatch: "#151515",
+    images: gallery(
+      [
+        "0fdb1ba8-0699-4b16-aeb7-e808533a0018",
+        "092efcd5-ac04-4419-8fb0-8d66f0126f4e",
+        "07ebefb3-843a-4061-975b-25d9df86c1bd",
+        "ea5e78ca-db46-4d28-ba22-f7f828e6a789",
+        "3b723994-0523-4ea5-b7e3-791b8baf7615",
+        "d2c04604-5e56-41ab-b4ea-5c78081c81e7",
+        "1ac537f9-2048-4965-bab8-6ba6fc2987b1",
+      ],
+      "Preto",
+    ),
+    spin360: "/videos/hyperslide-preto-360.mp4",
+  },
+  {
+    id: "orewood",
+    name: "Orewood Brown",
+    style: "66005-001",
+    swatch: "#d8cfc0",
+    images: gallery(
+      [
+        "0007ccc2-f9ee-4027-bf96-12c830ebfc1e",
+        "f7f89519-be44-4135-9e2f-d61d6b8a3848",
+        "79877fa0-5c18-4619-bf6a-53f4a0233b1f",
+        "dbb045c3-2d61-44c7-8382-6ff639fb5f8d",
+        "a58eefd6-e56b-485b-9c84-86de67d730b5",
+        "6cbd25f6-947b-4f4d-9725-010fdf2eeaea",
+        "65ce1a86-0a14-4df0-af69-8411a1f75552",
+      ],
+      "Orewood Brown",
+    ),
+    spin360: "/videos/hyperslide-orewood-360.mp4",
+  },
+];
+
+export const defaultColor = colors[0]!;
+
+// Variantes = cor × tamanho, tudo em um único produto.
+// Para usar checkout por link, preencha `checkoutUrls[corId][tamanhoBR]`.
+// Para marcar um tamanho como esgotado, adicione em `soldOut[corId]`.
+export const checkoutUrls: Record<string, Record<string, string>> = {
+  preto: {},
+  orewood: {},
+};
+
+export const soldOut: Record<string, string[]> = {
+  preto: [],
+  orewood: [],
+};
+
+export const product = {
+  brand: "Nike x Hyperice",
+  name: "Nike Air Zoom Hyperslide",
+  short: "Hyperslide",
+  price: 1799.9,
+  compareAtPrice: null as number | null, // ex.: 2199.9 para mostrar "de/por"
+  installments: 12,
+  pixDiscount: 0.05,
+  description:
+    "Feito para a recuperação depois do treino, da viagem, de um dia longo e de tudo o que vem no meio. Calor, vibração e amortecimento responsivo trabalham juntos para você sentir os pés mais leves a cada passo.",
+  specs: [
+    "Pod magnético removível, encaixado na tira ajustável",
+    "3 níveis de calor — até 47 °C",
+    "3 intensidades de vibração",
+    "Ciclos de recuperação de 15 minutos",
+    "Controle direto no pod ou pelo app Hyperice",
+    "Amortecimento Nike Air Zoom em todo o comprimento",
+    "Pode ser usado com ou sem o pod",
+  ],
+  shipping: [
+    "Frete grátis para todo o Brasil.",
+    "Envio em até 2 dias úteis após a confirmação do pagamento.",
+    "Troca ou devolução em até 7 dias após o recebimento.",
+  ],
+};
+
+export const editorial = {
+  heroGlow: NIKE_EDITORIAL("0ba4ca4a-0b11-4e29-a0bc-eb92c2ab31e4", "h_2432"),
+  pod: NIKE_EDITORIAL("c68c4082-5d78-4788-877e-4a07f8f9b188", "h_1133"),
+  sole: NIKE_EDITORIAL("7ceb480a-f559-4081-8b80-6905419becaa", "h_1133"),
+  strap: NIKE_EDITORIAL("90908f6f-d55c-468f-867e-0c7e103bcc57", "h_1133"),
+  podOnStrap: NIKE_EDITORIAL("23d22c6b-8493-4118-a80d-6685d9c2ed9f", "h_1133"),
+  floating: NIKE_EDITORIAL("042a3ce5-aa87-47a8-8918-12b93bdf1307", "w_1824"),
+};
+
+export const banners = [
+  {
+    image: editorial.heroGlow,
+    eyebrow: "Calor + massagem",
+    title: "Recuperação\nque você calça.",
+    text: "O pod Hyperice aquece até 47 °C e massageia o peito do pé em ciclos de 15 minutos.",
+    align: "left" as const,
+    dark: true,
+  },
+  {
+    image: editorial.floating,
+    eyebrow: "Nike Air Zoom",
+    title: "Macio de ponta\na ponta.",
+    text: "Air Zoom em todo o comprimento para uma pisada macia e responsiva, do pós-treino ao dia a dia.",
+    align: "right" as const,
+    dark: false,
+  },
+  {
+    image: editorial.pod,
+    eyebrow: "Pod magnético",
+    title: "Encaixa.\nLiga. Relaxa.",
+    text: "Ajuste calor e vibração no próprio pod ou pelo app Hyperice. Sem o pod, é um slide premium.",
+    align: "left" as const,
+    dark: false,
+  },
+];
+
+export const stats = [
+  { value: 3, suffix: "", label: "níveis de calor" },
+  { value: 47, suffix: "°C", label: "temperatura máxima" },
+  { value: 3, suffix: "", label: "intensidades de vibração" },
+  { value: 15, suffix: "min", label: "por ciclo de recuperação" },
+];
+
+export const steps = [
+  {
+    title: "Encaixe o pod",
+    text: "O pod magnético se prende à tira ajustável em segundos.",
+  },
+  {
+    title: "Escolha o nível",
+    text: "Três níveis de calor e três de vibração — no botão do pod ou no app Hyperice.",
+  },
+  {
+    title: "Recupere",
+    text: "Ciclos de 15 minutos aliviam a tensão e relaxam os pés. Depois, tire o pod e siga o dia.",
+  },
+];
+
+export const audiences = [
+  {
+    title: "Atletas",
+    text: "Pós-treino e pós-jogo, a recuperação começa assim que você tira o tênis.",
+  },
+  { title: "Corredores", text: "Calor e vibração para soltar os pés depois dos quilômetros." },
+  { title: "Rotina em pé", text: "Para quem passa horas em pé no trabalho ou na rua." },
+  { title: "Viagens", text: "Leve, sem fio e com pod removível — cabe na mala e no hotel." },
+];
+
+export const faq = [
+  {
+    q: "O que é o Nike Air Zoom Hyperslide?",
+    a: "É um chinelo slide de recuperação criado pela Nike em parceria com a Hyperice. Une amortecimento Nike Air Zoom em todo o comprimento a um pod que aplica calor e vibração no peito do pé.",
+  },
+  {
+    q: "Como o pod funciona?",
+    a: "O pod magnético removível fica na tira ajustável. Ele tem 3 níveis de calor (até cerca de 47 °C) e 3 intensidades de vibração, em ciclos de recuperação de 15 minutos.",
+  },
+  {
+    q: "Dá para usar sem o pod?",
+    a: "Sim. Sem o pod ele funciona como um slide premium com amortecimento Air Zoom para o dia a dia.",
+  },
+  {
+    q: "Como controlo o calor e a vibração?",
+    a: "Direto nos controles do próprio pod ou pelo app Hyperice no celular.",
+  },
+  {
+    q: "É só para atletas?",
+    a: "Não. É indicado para qualquer pessoa que passa muito tempo em pé: atletas, corredores, quem viaja muito ou trabalha em pé.",
+  },
+  {
+    q: "Qual tamanho devo escolher?",
+    a: "Use o guia de tamanhos na página do produto. Se ficar entre dois números, recomendamos o maior — a tira é ajustável.",
+  },
+  {
+    q: "Qual o prazo de entrega e como funciona a troca?",
+    a: "Enviamos em até 2 dias úteis após a confirmação do pagamento, com frete grátis. Você pode trocar ou devolver em até 7 dias após o recebimento.",
+  },
+];
