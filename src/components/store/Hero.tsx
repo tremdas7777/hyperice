@@ -1,7 +1,7 @@
 import { ArrowDown, Flame, Move3d, Waves, Wind } from "lucide-react";
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
-import { colors, kit, product } from "@/data/store";
+import { colors, product } from "@/data/store";
 import { formatBRL, installment, pixPrice, scrollToId } from "@/lib/format";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useSelectedColor, useShop } from "@/state/shop";
@@ -22,7 +22,7 @@ const particles = Array.from({ length: 14 }, (_, i) => ({
 
 export function Hero() {
   const { cardEnabled } = useStoreSettings();
-  const { colorId, setColorId, setOffer } = useShop();
+  const { colorId, setColorId } = useShop();
   const color = useSelectedColor();
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { margin: "0px 0px -10% 0px" });
@@ -87,33 +87,15 @@ export function Hero() {
                 {formatBRL(product.price)}
               </span>
             </div>
-            <span className="text-sm text-white/60">
-              {cardEnabled ? (
-                <>
-                  {product.installments}x de {formatBRL(installment(product.price))} sem juros ·{" "}
-                  <span className="font-semibold text-emerald-400">
-                    {formatBRL(pixPrice(product.price))} no Pix
-                  </span>
-                </>
-              ) : (
-                <>
-                  À vista no Pix ·{" "}
-                  <span className="font-semibold text-emerald-400">Frete grátis</span>
-                </>
-              )}
-            </span>
-            <button
-              onClick={() => {
-                setOffer("kit");
-                scrollToId("comprar");
-              }}
-              className="mt-3 inline-flex items-center gap-2 self-start rounded-full border border-heat/40 bg-heat/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-heat max-lg:self-center"
-            >
-              <span className="rounded-full bg-heat px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                Kit
+            {/* Parcelas e preço no Pix só com o cartão ativo no /admin. */}
+            {cardEnabled && (
+              <span className="text-sm text-white/60">
+                {product.installments}x de {formatBRL(installment(product.price))} sem juros ·{" "}
+                <span className="font-semibold text-emerald-400">
+                  {formatBRL(pixPrice(product.price))} no Pix
+                </span>
               </span>
-              2 pares por {formatBRL(kit.price)} — você escolhe as cores
-            </button>
+            )}
           </motion.div>
 
           <motion.div
