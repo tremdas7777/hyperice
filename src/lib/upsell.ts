@@ -1,6 +1,27 @@
-/** Ofertas da tela pós-compra (Pix e cartão). Sem par extra: só serviços do envio. */
-export const UPSELL_PRODUCTS = ["seguro", "expresso"] as const;
+import { socks } from "@/data/store";
+
+/** Ofertas da tela pós-compra (Pix e cartão): meias (branca e/ou preta), seguro e envio expresso. */
+export const UPSELL_PRODUCTS = ["meia-branca", "meia-preta", "seguro", "expresso"] as const;
 export type UpsellProduct = (typeof UPSELL_PRODUCTS)[number];
+
+export const SOCK_SIZES = socks.sizes.map((s) => s.id) as [string, ...string[]];
+
+/** Oferta de meia de cada cor (id da oferta → cor). */
+export const SOCK_OFFERS = socks.colors.map((c) => ({
+  product: `meia-${c.id}` as UpsellProduct,
+  color: c,
+}));
+
+const isSock = (p: UpsellProduct) => p.startsWith("meia-");
+
+/** Tamanho da meia sugerido pela numeração BR do chinelo (ex.: "41" ou "39/40" → M). */
+export function sockSizeFor(brSize: string | null | undefined): string {
+  const n = Number.parseInt(brSize ?? "", 10);
+  if (!Number.isFinite(n)) return "M";
+  const first = socks.sizes[0]!;
+  if (n < first.from) return first.id;
+  return (socks.sizes.find((s) => n >= s.from && n < s.to) ?? socks.sizes.at(-1)!).id;
+}
 
 /** Seguro de entrega (pós-compra): reenvio ou reembolso em caso de extravio ou dano no transporte. */
 export const SHIPPING_INSURANCE = {
@@ -22,10 +43,22 @@ export const EXPRESS_SHIPPING = {
 /**
  * O que o cliente escolheu na tela pós-compra, numa cobrança só (preços do servidor).
  * Itens repetidos ou desconhecidos são ignorados; a ordem segue UPSELL_PRODUCTS.
+ * As meias precisam do tamanho; sem ele, ficam de fora.
  */
-export function upsellSelection(chosen: readonly string[]) {
-  const products = UPSELL_PRODUCTS.filter((p) => chosen.includes(p));
+export function upsellSelection(chosen: readonly string[], sockSize?: string | null) {
+  const products = UPSELL_PRODUCTS.filter(
+    (p) => chosen.includes(p) && (!isSock(p) || (!!sockSize && SOCK_SIZES.includes(sockSize))),
+  );
   const items = products.map((p) => {
+    if (isSock(p)) {
+      const color = SOCK_OFFERS.find((o) => o.product === p)!.color;
+      return {
+        product: p,
+        title: socks.gatewayName,
+        price: socks.price,
+        label: `${socks.name} ${color.name} · ${sockSize}`,
+      };
+    }
     const o = p === "seguro" ? SHIPPING_INSURANCE : EXPRESS_SHIPPING;
     return { product: p, title: o.gatewayName, price: o.price, label: o.name };
   });

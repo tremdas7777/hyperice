@@ -14,7 +14,7 @@ import {
 } from "@/lib/pix-orders.server";
 import { createCardTransaction, CARD_ORDER_PREFIX, getHypercashKeys } from "@/lib/hypercash.server";
 import { isPaidStatus } from "@/lib/pix-status";
-import { UPSELL_PRODUCTS, upsellSelection } from "@/lib/upsell";
+import { SOCK_SIZES, UPSELL_PRODUCTS, upsellSelection } from "@/lib/upsell";
 import { checkoutTotals, CARD_MAX_INSTALLMENTS } from "@/lib/payment-pricing";
 import { FREE_SHIPPING_MIN, getFrete, isFreeShippingEligible } from "@/lib/shipping";
 
@@ -301,8 +301,8 @@ export const createCardCharge = createServerFn({ method: "POST" })
   });
 
 /**
- * Etapa do pós-compra: seguro de entrega ou envio expresso, que tem página própria e cobrança
- * separada. Devolve a cobrança já feita nesta etapa, se houver.
+ * Etapa do pós-compra: ofertas (meias e/ou seguro) ou envio expresso, que tem página própria e
+ * cobrança separada. Devolve a cobrança já feita nesta etapa, se houver.
  */
 async function upsellStep(parentId: string, products: readonly string[]) {
   const express = products.includes("expresso");
@@ -312,9 +312,21 @@ async function upsellStep(parentId: string, products: readonly string[]) {
 
 const upsellOffersSchema = {
   origin: z.string().url(),
-  // Ofertas marcadas na tela pós-compra (seguro de entrega ou envio expresso), numa cobrança só.
+  // Ofertas marcadas na tela pós-compra (meias, seguro de entrega ou envio expresso), numa cobrança só.
   products: z.array(z.enum(UPSELL_PRODUCTS)).min(1).max(UPSELL_PRODUCTS.length),
+  /** Tamanho da meia (obrigatório quando alguma meia foi marcada). */
+  sockSize: z.enum(SOCK_SIZES).optional(),
 };
+
+/** Ofertas escolhidas com preço do servidor; meia sem tamanho é recusada. */
+function chosenOffers(d: { products: readonly string[]; sockSize?: string | undefined }) {
+  if (d.products.some((p) => p.startsWith("meia-")) && !d.sockSize) {
+    throw new Error("Escolha o tamanho da meia.");
+  }
+  const sel = upsellSelection(d.products, d.sockSize);
+  if (!sel.products.length) throw new Error("Escolha uma oferta.");
+  return sel;
+}
 
 /**
  * Upsell no MESMO cartão da compra (o token do cartão volta do navegador; nada é guardado no banco).
@@ -356,10 +368,9 @@ export const createCardFollowUpCharge = createServerFn({ method: "POST" })
         };
       }
 
-      const sel = upsellSelection(data.products);
-      if (!sel.products.length) throw new Error("Escolha uma oferta.");
+      const sel = chosenOffers(data);
       const amount = Math.round(sel.total * 100);
-      // Seguro e envio expresso: à vista.
+      // Ofertas do pós-compra: à vista.
       const installments = 1;
       const c = parent.customer;
       const a = c.address!;
@@ -407,6 +418,9 @@ export const createCardFollowUpCharge = createServerFn({ method: "POST" })
           ...(tx.card ? { card: tx.card } : {}),
           upsellOf: parent.id,
           upsellItems: sel.products,
+          ...(data.sockSize && sel.products.some((p) => p.startsWith("meia-"))
+            ? { sockSize: data.sockSize }
+            : {}),
         },
         bundleId: parent.bundle_id,
         bundleName: `Upsell: ${sel.label}`,
@@ -428,7 +442,7 @@ export const createCardFollowUpCharge = createServerFn({ method: "POST" })
   );
 
 /**
- * Pós-compra no Pix: seguro de entrega ou envio expresso, num Pix só.
+ * Pós-compra no Pix: ofertas marcadas (meias e/ou seguro) ou envio expresso, num Pix só.
  * Usa os dados já salvos do pedido original — o cliente não digita nada de novo.
  */
 export const createUpsellCharge = createServerFn({ method: "POST" })
@@ -454,8 +468,7 @@ export const createUpsellCharge = createServerFn({ method: "POST" })
       };
     }
 
-    const sel = upsellSelection(data.products);
-    if (!sel.products.length) throw new Error("Escolha uma oferta.");
+    const sel = chosenOffers(data);
     const amount = Math.round(sel.total * 100);
     const c = parent.customer;
     const charge = await gatewayCashin({ name: c.name, cpf: c.cpf, amount, origin: data.origin });
@@ -474,6 +487,9 @@ export const createUpsellCharge = createServerFn({ method: "POST" })
         frete: { id: "junto", name: `Junto com o pedido ${parent.id}`, price: 0 },
         upsellOf: parent.id,
         upsellItems: sel.products,
+        ...(data.sockSize && sel.products.some((p) => p.startsWith("meia-"))
+          ? { sockSize: data.sockSize }
+          : {}),
         qrcode: charge.qrcode,
       },
       bundleId: parent.bundle_id,

@@ -13,6 +13,8 @@ export type PixSession = {
   /** Linhas do pedido para exibir (itens ou ofertas pós-compra). */
   lines: OrderLine[];
   productPrice: number;
+  /** Numeração BR do primeiro chinelo do pedido (sugere o tamanho da meia no pós-compra). */
+  mainSize?: string;
   /** Upsell pós-compra: id do pedido original. */
   isUpsell?: boolean;
   parentId?: string;

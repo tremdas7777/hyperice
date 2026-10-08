@@ -19,6 +19,7 @@ import { getSessionId, getStoredUtms } from "@/lib/tracking";
 import { trackCheckoutStep, type CheckoutStep } from "@/lib/checkout-tracking.functions";
 import { getMetaCookies, metaTrack } from "@/lib/meta-pixel";
 import { trackCheckoutClick } from "@/lib/analytics";
+import { itemPairs } from "@/lib/cart";
 import { orderSummary } from "@/lib/order";
 import { cn } from "@/lib/utils";
 import { useShop } from "@/state/shop";
@@ -314,7 +315,9 @@ function Checkout() {
       ...(address ? { address } : {}),
     };
   };
+  const mainSize = cart.flatMap(itemPairs)[0]?.size;
   const sessionBase = () => ({
+    ...(mainSize ? { mainSize } : {}),
     email: id.email,
     name: id.name,
     bundleId: summary.bundleId,

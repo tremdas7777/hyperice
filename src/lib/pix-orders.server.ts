@@ -25,8 +25,10 @@ export type StoredCustomer = {
   bumps?: { id: string; name: string; price: number }[] | undefined;
   /** Id do pedido original quando este é um upsell pós-compra. */
   upsellOf?: string | undefined;
-  /** Ofertas pós-compra desta cobrança (seguro de entrega ou envio expresso). */
-  upsellItems?: ("seguro" | "expresso")[] | undefined;
+  /** Ofertas pós-compra desta cobrança (meias, seguro de entrega ou envio expresso). */
+  upsellItems?: ("meia-branca" | "meia-preta" | "seguro" | "expresso")[] | undefined;
+  /** Tamanho das meias do pós-compra. */
+  sockSize?: string | undefined;
   /** Código Pix copia-e-cola (guardado no upsell para reexibir sem cobrar de novo). */
   qrcode?: string | undefined;
   /** Forma de pagamento (pedidos antigos não têm: são Pix). */
