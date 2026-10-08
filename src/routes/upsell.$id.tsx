@@ -14,7 +14,7 @@ import {
   type UpsellProduct,
 } from "@/lib/upsell";
 import { cn } from "@/lib/utils";
-import { brl, PixIcon } from "@/components/checkout/parts";
+import { brl } from "@/components/checkout/parts";
 import { Shell } from "@/components/checkout/OrderShell";
 
 export const Route = createFileRoute("/upsell/$id")({
@@ -293,18 +293,11 @@ function Page() {
             {mutation.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
             Sim, adicionar ao pedido
           </span>
-          <span className="mt-0.5 flex items-center gap-1.5 text-[13px] font-medium opacity-90">
-            {sel.products.length === 0 ? (
-              "Marque uma oferta acima"
-            ) : isCard ? (
-              `${brl(sel.total)} no mesmo cartão, com 1 clique`
-            ) : (
-              <>
-                <PixIcon className="h-3.5 w-3.5 text-white" />
-                {brl(sel.total)} no Pix
-              </>
-            )}
-          </span>
+          {sel.products.length === 0 && (
+            <span className="mt-0.5 text-[13px] font-medium opacity-90">
+              Marque uma oferta acima
+            </span>
+          )}
         </button>
 
         <Link

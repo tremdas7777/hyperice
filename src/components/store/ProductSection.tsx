@@ -19,6 +19,7 @@ import { useTrackProductView } from "@/hooks/useTrackProductView";
 import { metaTrack } from "@/lib/meta-pixel";
 import { itemTotal } from "@/lib/cart";
 import { formatBRL, installment, pixPrice } from "@/lib/format";
+import { FREE_SHIPPING_MIN, FREE_SHIPPING_TEXT, isFreeShippingEligible } from "@/lib/shipping";
 import { useCurrentSelection, useSelectedColor, useShop } from "@/state/shop";
 import { SizeGuideModal } from "./SizeGuideModal";
 import { Eyebrow, ShineButton } from "./primitives";
@@ -365,7 +366,10 @@ export function ProductSection() {
               </>
             ) : (
               <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-pix/10 px-3 py-1 text-sm font-semibold text-pix">
-                À vista no Pix · frete grátis
+                À vista no Pix ·{" "}
+                {isFreeShippingEligible(price)
+                  ? "frete grátis"
+                  : `frete grátis acima de R$ ${FREE_SHIPPING_MIN}`}
               </p>
             )}
           </div>
@@ -543,7 +547,7 @@ export function ProductSection() {
 
           <ul className="mt-8 grid grid-cols-2 gap-3 text-sm">
             {[
-              { icon: Truck, text: "Frete grátis para todo o Brasil" },
+              { icon: Truck, text: FREE_SHIPPING_TEXT },
               { icon: Zap, text: "Envio em até 2 dias úteis" },
               { icon: ShieldCheck, text: "Pagamento 100% seguro" },
               { icon: RefreshCcw, text: "Troca fácil em 7 dias" },

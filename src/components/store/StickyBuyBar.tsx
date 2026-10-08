@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { kit, product } from "@/data/store";
 import { colorById } from "@/lib/cart";
 import { formatBRL, installment } from "@/lib/format";
+import { isFreeShippingEligible } from "@/lib/shipping";
 import { useBuyNow } from "@/hooks/useBuyNow";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useCurrentSelection, useSelectedColor, useShop } from "@/state/shop";
@@ -79,7 +80,9 @@ export function StickyBuyBar() {
                 {formatBRL(price)}
                 {cardEnabled
                   ? ` · ${product.installments}x ${formatBRL(installment(price))}`
-                  : " · frete grátis"}
+                  : isFreeShippingEligible(price)
+                    ? " · frete grátis"
+                    : ""}
               </p>
             </div>
             <button

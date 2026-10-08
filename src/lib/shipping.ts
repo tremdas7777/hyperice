@@ -10,6 +10,10 @@ export type FreteId = (typeof FRETES)[number]["id"];
 export const getFrete = (id: FreteId) => FRETES.find((f) => f.id === id) ?? FRETES[0];
 
 /** Valor mínimo (produtos, sem frete) para liberar o frete grátis. 0 = grátis em qualquer pedido. */
-export const FREE_SHIPPING_MIN = 0;
+export const FREE_SHIPPING_MIN = 200;
 
 export const isFreeShippingEligible = (subtotal: number) => subtotal >= FREE_SHIPPING_MIN;
+
+/** Chamada curta para a loja, ex.: "Frete grátis acima de R$ 200". */
+export const FREE_SHIPPING_TEXT =
+  FREE_SHIPPING_MIN > 0 ? `Frete grátis acima de R$ ${FREE_SHIPPING_MIN}` : "Frete grátis";

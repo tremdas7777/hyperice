@@ -166,10 +166,7 @@ function Page() {
         >
           <span className="flex items-center gap-2 text-[17px] font-bold uppercase tracking-wider">
             {mutation.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
-            {isCard ? "Comprar com um clique" : "Gerar Pix"}
-          </span>
-          <span className="text-[13px] font-medium opacity-90">
-            {brl(EXPRESS_SHIPPING.price)} {isCard ? "no mesmo cartão" : "no Pix"}
+            Quero envio expresso
           </span>
         </button>
 

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { FRETES } from "@/lib/shipping";
+import { FREE_SHIPPING_MIN, FRETES } from "@/lib/shipping";
 import { brl } from "@/components/checkout/parts";
 import { PolicyPage } from "@/components/store/PageShell";
 
@@ -25,7 +25,10 @@ export const Route = createFileRoute("/politica-envio")({
           </li>
         ))}
       </ul>
-      <p>O frete grátis vale para todo o Brasil, em qualquer pedido.</p>
+      <p>
+        O frete grátis vale para todo o Brasil em pedidos a partir de {brl(FREE_SHIPPING_MIN)} em
+        produtos. Abaixo disso, você escolhe o Frete Padrão ou o Frete Express no checkout.
+      </p>
       <h2>Rastreamento</h2>
       <p>
         Assim que o pedido é despachado, você recebe o código de rastreio e pode acompanhar a

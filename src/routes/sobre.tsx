@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import { product, store } from "@/data/store";
+import { FREE_SHIPPING_TEXT } from "@/lib/shipping";
 import { PageHero, PageShell } from "@/components/store/PageShell";
 
 export const Route = createFileRoute("/sobre")({
@@ -20,7 +21,7 @@ const pillars = [
   {
     icon: Truck,
     title: "Envio para todo o Brasil",
-    text: "Frete grátis em qualquer pedido, com código de rastreio assim que o pedido é despachado.",
+    text: `${FREE_SHIPPING_TEXT} em produtos, com código de rastreio assim que o pedido é despachado.`,
   },
   {
     icon: ShieldCheck,

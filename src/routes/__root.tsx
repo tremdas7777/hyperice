@@ -134,7 +134,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Nike x Hyperice Air Zoom Hyperslide: chinelo de recuperação com pod de calor e massagem e amortecimento Air Zoom. Preto e Orewood Brown. Frete grátis, 12x sem juros e 5% off no Pix.",
+          "Nike x Hyperice Air Zoom Hyperslide: chinelo de recuperação com pod de calor e massagem e amortecimento Air Zoom. Preto e Orewood Brown. Frete grátis acima de R$ 200.",
       },
       { name: "theme-color", content: "#0b0b0c" },
       { property: "og:title", content: "Nike Air Zoom Hyperslide" },

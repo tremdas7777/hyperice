@@ -4,6 +4,8 @@
 // Chaves de gateway, pixels e tokens ficam no painel /admin.
 // ─────────────────────────────────────────────────────────────
 
+import { FREE_SHIPPING_TEXT } from "@/lib/shipping";
+
 export const store = {
   name: "RECOVR",
   showLogo: false, // mostra o nome acima como logo no cabeçalho e no rodapé
@@ -19,7 +21,7 @@ export const store = {
   // `card: true` = só aparece quando o cartão estiver ativo no /admin.
   announcements: [
     { text: "Kit 2 pares por R$ 267" },
-    { text: "Frete grátis para todo o Brasil" },
+    { text: FREE_SHIPPING_TEXT },
     { text: "12x sem juros no cartão", card: true },
     { text: "5% de desconto no Pix", card: true },
     { text: "Troca fácil em até 7 dias" },
@@ -146,7 +148,7 @@ export const product = {
     "Pode ser usado com ou sem o pod",
   ],
   shipping: [
-    "Frete grátis para todo o Brasil.",
+    `${FREE_SHIPPING_TEXT} para todo o Brasil.`,
     "Envio em até 2 dias úteis após a confirmação do pagamento.",
     "Troca ou devolução em até 7 dias após o recebimento.",
   ],
@@ -384,6 +386,6 @@ export const faq = [
   },
   {
     q: "Qual o prazo de entrega e como funciona a troca?",
-    a: "Enviamos em até 2 dias úteis após a confirmação do pagamento, com frete grátis. Você pode trocar ou devolver em até 7 dias após o recebimento.",
+    a: `Enviamos em até 2 dias úteis após a confirmação do pagamento. ${FREE_SHIPPING_TEXT} em produtos. Você pode trocar ou devolver em até 7 dias após o recebimento.`,
   },
 ];

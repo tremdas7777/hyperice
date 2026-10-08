@@ -3,9 +3,10 @@ import { Check, Lock, RefreshCcw, Truck, X } from "lucide-react";
 import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect, useState } from "react";
 import { mindSlide } from "@/data/store";
-import { mindColorById, mindOfferPrice } from "@/lib/cart";
+import { cartTotal, mindColorById, mindOfferPrice } from "@/lib/cart";
 import { formatBRL } from "@/lib/format";
 import { metaTrack } from "@/lib/meta-pixel";
+import { isFreeShippingEligible } from "@/lib/shipping";
 import { useShop } from "@/state/shop";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -19,7 +20,7 @@ type PairChoice = { colorId: string; size: string | null };
  * "Recusar oferta" segue sem eles. O X só fecha.
  */
 export function MindOfferModal() {
-  const { mindOfferOpen, setMindOfferOpen, setMindItem } = useShop();
+  const { cart, mindOfferOpen, setMindOfferOpen, setMindItem } = useShop();
   const navigate = useNavigate();
   const [units, setUnits] = useState(1);
   const [pairs, setPairs] = useState<PairChoice[]>(() =>
@@ -37,6 +38,9 @@ export function MindOfferModal() {
   const compareAt = mindSlide.compareAtPrice * units;
   const off = Math.round((1 - price / compareAt) * 100);
   const missing = chosen.findIndex((p) => !p.size);
+  // Pedido abaixo do frete grátis que passa a ter frete grátis com o slide.
+  const base = cartTotal(cart.filter((i) => i.type !== "mind"));
+  const unlocksFreeShipping = !isFreeShippingEligible(base) && isFreeShippingEligible(base + price);
 
   useEffect(() => {
     setMobile(!window.matchMedia("(min-width: 768px)").matches);
@@ -326,7 +330,14 @@ export function MindOfferModal() {
 
                 <ul className="mt-5 grid grid-cols-2 gap-2 text-[12px] text-ink/70">
                   <li className="flex items-center gap-2 rounded-xl bg-bone px-3 py-2">
-                    <Truck className="h-4 w-4 shrink-0 text-heat" /> Mesma caixa, sem frete extra
+                    <Truck className="h-4 w-4 shrink-0 text-heat" />{" "}
+                    {unlocksFreeShipping ? (
+                      <span>
+                        Seu pedido ganha <b className="text-ink">frete grátis</b>
+                      </span>
+                    ) : (
+                      "Mesma caixa, sem frete extra"
+                    )}
                   </li>
                   <li className="flex items-center gap-2 rounded-xl bg-bone px-3 py-2">
                     <RefreshCcw className="h-4 w-4 shrink-0 text-heat" /> Troca fácil em 7 dias

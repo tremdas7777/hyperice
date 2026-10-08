@@ -2,6 +2,7 @@ import { motion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
 import { editorial, kit, product } from "@/data/store";
 import { formatBRL, installment, scrollToId } from "@/lib/format";
+import { isFreeShippingEligible } from "@/lib/shipping";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { ShineButton, SplitTitle } from "./primitives";
 
@@ -35,7 +36,8 @@ export function FinalCTA() {
           {cardEnabled
             ? ` ou ${product.installments}x de ${formatBRL(installment(product.price))} sem juros`
             : ""}
-          . Ou leve as duas cores no kit por {formatBRL(kit.price)}. Frete grátis.
+          . Ou leve 2 pares no kit por {formatBRL(kit.price)}
+          {isFreeShippingEligible(kit.price) ? " com frete grátis" : ""}.
         </p>
         <ShineButton onClick={() => scrollToId("comprar")} className="mt-10 px-10 py-5 text-base">
           Garantir o meu
