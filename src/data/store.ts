@@ -287,6 +287,20 @@ export const socks = {
   ],
 };
 
+// Upsell pós-compra: boné Nike Club Futura (tamanho único, tira ajustável), preto e/ou branco.
+// O preço é por boné e é aplicado no servidor.
+export const caps = {
+  name: "Boné Nike Club Futura",
+  /** Nome genérico enviado ao gateway. */
+  gatewayName: "Boné esportivo",
+  price: 49.9,
+  description: "Algodão macio, aba curva e tira traseira ajustável. Tamanho único.",
+  colors: [
+    { id: "preto", name: "Preto", image: "https://imgnike-a.akamaihd.net/768x768/026470ID.jpg" },
+    { id: "branco", name: "Branco", image: "https://imgnike-a.akamaihd.net/768x768/02647051.jpg" },
+  ],
+};
+
 export const editorial = {
   heroGlow: NIKE_EDITORIAL("0ba4ca4a-0b11-4e29-a0bc-eb92c2ab31e4", "h_2432"),
   pod: NIKE_EDITORIAL("c68c4082-5d78-4788-877e-4a07f8f9b188", "h_1133"),

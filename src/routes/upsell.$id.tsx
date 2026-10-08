@@ -3,10 +3,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Check, CircleCheck, Loader2, ShieldCheck } from "lucide-react";
-import { socks } from "@/data/store";
+import { caps, socks } from "@/data/store";
 import { createCardFollowUpCharge, createUpsellCharge } from "@/lib/pix.functions";
 import { loadPixSession, savePixSession, type PixSession } from "@/lib/pix-session";
 import {
+  CAP_OFFERS,
+  isSock,
+  offerImage,
   SHIPPING_INSURANCE,
   SOCK_OFFERS,
   sockSizeFor,
@@ -24,10 +27,9 @@ export const Route = createFileRoute("/upsell/$id")({
   component: Page,
 });
 
-const sockImage = (p: UpsellProduct) => SOCK_OFFERS.find((o) => o.product === p)?.color.image;
-
 /**
- * Ofertas pós-compra: meia Nike (branca e/ou preta, pacote com 3 pares) e seguro de entrega.
+ * Ofertas pós-compra: meia Nike (branca e/ou preta, pacote com 3 pares), boné Nike (preto e/ou
+ * branco) e seguro de entrega.
  * O cliente marca o que quiser e paga tudo numa cobrança só. Depois (comprando ou não) vem a
  * página do envio expresso — ver /expresso. Cartão → no mesmo cartão (com o clique do cliente);
  * Pix → um Pix separado.
@@ -53,7 +55,7 @@ function Page() {
   }, [id, navigate]);
 
   const sel = upsellSelection(chosen, sockSize);
-  const socksChosen = chosen.some((p) => p.startsWith("meia-"));
+  const socksChosen = chosen.some(isSock);
   const isCard = session?.method === "card" && !!session.cardHash && !usePix;
   const toggle = (p: UpsellProduct) =>
     setChosen((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
@@ -85,12 +87,14 @@ function Page() {
         bundleId: session.bundleId,
         bundleName: sel.label,
         lines: sel.items.map((i) => {
-          const img = sockImage(i.product);
+          const img = offerImage(i.product);
           return {
             title: i.label,
-            detail: img
-              ? "3 pares · vai junto com o seu pedido"
-              : "Reenvio ou reembolso em caso de extravio ou dano",
+            detail: !img
+              ? "Reenvio ou reembolso em caso de extravio ou dano"
+              : isSock(i.product)
+                ? "3 pares · vai junto com o seu pedido"
+                : "Tamanho único · vai junto com o seu pedido",
             price: i.price,
             thumbs: img ? [img] : [],
           };
@@ -154,48 +158,14 @@ function Page() {
           <p className="mt-4 text-[13px] font-semibold">
             Marque a cor <span className="font-normal text-mute">(pode levar as duas)</span>
           </p>
-          <div className="mt-2 grid grid-cols-2 gap-3">
-            {SOCK_OFFERS.map(({ product, color }) => {
-              const on = chosen.includes(product);
-              return (
-                <label
-                  key={product}
-                  className={cn(
-                    "relative cursor-pointer overflow-hidden rounded-2xl border-2 bg-white transition",
-                    on ? "border-pix" : "border-stone hover:border-ink/40",
-                  )}
-                >
-                  <input
-                    type="checkbox"
-                    checked={on}
-                    onChange={() => toggle(product)}
-                    className="peer sr-only"
-                  />
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "absolute right-2.5 top-2.5 z-10 grid h-6 w-6 place-items-center rounded-md border-2 transition peer-focus-visible:ring-2 peer-focus-visible:ring-ink",
-                      on ? "border-pix bg-pix text-white" : "border-stone bg-white",
-                    )}
-                  >
-                    {on && <Check className="h-4 w-4" strokeWidth={3} />}
-                  </span>
-                  <img
-                    src={color.image}
-                    alt={`${socks.name} ${color.name}`}
-                    loading="lazy"
-                    className="aspect-square w-full bg-white object-contain p-2"
-                  />
-                  <span className="block border-t border-stone px-3 py-2.5">
-                    <span className="block text-[13px] font-semibold">Meia {color.name}</span>
-                    <span className="block text-[17px] font-extrabold text-pix">
-                      {brl(socks.price)}
-                    </span>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
+          <ColorTiles
+            offers={SOCK_OFFERS}
+            noun="Meia"
+            productName={socks.name}
+            price={socks.price}
+            chosen={chosen}
+            onToggle={toggle}
+          />
 
           {socksChosen && (
             <div className="mt-4">
@@ -229,6 +199,24 @@ function Page() {
               </div>
             </div>
           )}
+        </section>
+
+        {/* Bonés: preto, branco ou os dois. */}
+        <section className="mt-4 rounded-2xl border-2 border-stone bg-white p-4">
+          <h2 className="text-[16px] font-semibold leading-snug">{caps.name}</h2>
+          <p className="mt-0.5 text-[13px] text-mute">{caps.description}</p>
+
+          <p className="mt-4 text-[13px] font-semibold">
+            Marque a cor <span className="font-normal text-mute">(pode levar os dois)</span>
+          </p>
+          <ColorTiles
+            offers={CAP_OFFERS}
+            noun="Boné"
+            productName={caps.name}
+            price={caps.price}
+            chosen={chosen}
+            onToggle={toggle}
+          />
         </section>
 
         {/* Seguro de entrega. */}
@@ -310,5 +298,67 @@ function Page() {
         </Link>
       </div>
     </Shell>
+  );
+}
+
+/** Uma foto marcável por cor (o cliente pode marcar mais de uma). */
+function ColorTiles({
+  offers,
+  noun,
+  productName,
+  price,
+  chosen,
+  onToggle,
+}: {
+  offers: { product: UpsellProduct; color: { name: string; image: string } }[];
+  noun: string;
+  productName: string;
+  price: number;
+  chosen: UpsellProduct[];
+  onToggle: (p: UpsellProduct) => void;
+}) {
+  return (
+    <div className="mt-2 grid grid-cols-2 gap-3">
+      {offers.map(({ product, color }) => {
+        const on = chosen.includes(product);
+        return (
+          <label
+            key={product}
+            className={cn(
+              "relative cursor-pointer overflow-hidden rounded-2xl border-2 bg-white transition",
+              on ? "border-pix" : "border-stone hover:border-ink/40",
+            )}
+          >
+            <input
+              type="checkbox"
+              checked={on}
+              onChange={() => onToggle(product)}
+              className="peer sr-only"
+            />
+            <span
+              aria-hidden
+              className={cn(
+                "absolute right-2.5 top-2.5 z-10 grid h-6 w-6 place-items-center rounded-md border-2 transition peer-focus-visible:ring-2 peer-focus-visible:ring-ink",
+                on ? "border-pix bg-pix text-white" : "border-stone bg-white",
+              )}
+            >
+              {on && <Check className="h-4 w-4" strokeWidth={3} />}
+            </span>
+            <img
+              src={color.image}
+              alt={`${productName} ${color.name}`}
+              loading="lazy"
+              className="aspect-square w-full bg-white object-contain p-2"
+            />
+            <span className="block border-t border-stone px-3 py-2.5">
+              <span className="block text-[13px] font-semibold">
+                {noun} {color.name}
+              </span>
+              <span className="block text-[17px] font-extrabold text-pix">{brl(price)}</span>
+            </span>
+          </label>
+        );
+      })}
+    </div>
   );
 }

@@ -7,6 +7,7 @@ import { product } from "@/data/store";
 import type { CartItem } from "@/lib/cart";
 import { orderSummary } from "@/lib/order";
 import { isPaidStatus } from "@/lib/pix-status";
+import type { UpsellProduct } from "@/lib/upsell";
 import { getCardTransaction, isCardOrderId, CARD_ORDER_PREFIX } from "@/lib/hypercash.server";
 
 const API = "https://app.pixgateip.com/api";
@@ -25,8 +26,8 @@ export type StoredCustomer = {
   bumps?: { id: string; name: string; price: number }[] | undefined;
   /** Id do pedido original quando este é um upsell pós-compra. */
   upsellOf?: string | undefined;
-  /** Ofertas pós-compra desta cobrança (meias, seguro de entrega ou envio expresso). */
-  upsellItems?: ("meia-branca" | "meia-preta" | "seguro" | "expresso")[] | undefined;
+  /** Ofertas pós-compra desta cobrança (meias, bonés, seguro de entrega ou envio expresso). */
+  upsellItems?: UpsellProduct[] | undefined;
   /** Tamanho das meias do pós-compra. */
   sockSize?: string | undefined;
   /** Código Pix copia-e-cola (guardado no upsell para reexibir sem cobrar de novo). */

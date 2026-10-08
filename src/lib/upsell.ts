@@ -1,7 +1,17 @@
-import { socks } from "@/data/store";
+import { caps, socks } from "@/data/store";
 
-/** Ofertas da tela pós-compra (Pix e cartão): meias (branca e/ou preta), seguro e envio expresso. */
-export const UPSELL_PRODUCTS = ["meia-branca", "meia-preta", "seguro", "expresso"] as const;
+/**
+ * Ofertas da tela pós-compra (Pix e cartão): meias (branca e/ou preta), bonés (preto e/ou branco),
+ * seguro e envio expresso.
+ */
+export const UPSELL_PRODUCTS = [
+  "meia-branca",
+  "meia-preta",
+  "bone-preto",
+  "bone-branco",
+  "seguro",
+  "expresso",
+] as const;
 export type UpsellProduct = (typeof UPSELL_PRODUCTS)[number];
 
 export const SOCK_SIZES = socks.sizes.map((s) => s.id) as [string, ...string[]];
@@ -12,7 +22,18 @@ export const SOCK_OFFERS = socks.colors.map((c) => ({
   color: c,
 }));
 
-const isSock = (p: UpsellProduct) => p.startsWith("meia-");
+/** Oferta de boné de cada cor (id da oferta → cor). Tamanho único. */
+export const CAP_OFFERS = caps.colors.map((c) => ({
+  product: `bone-${c.id}` as UpsellProduct,
+  color: c,
+}));
+
+export const isSock = (p: string) => p.startsWith("meia-");
+const isCap = (p: string) => p.startsWith("bone-");
+
+/** Foto da oferta (meia ou boné) para as miniaturas do pedido. */
+export const offerImage = (p: UpsellProduct) =>
+  [...SOCK_OFFERS, ...CAP_OFFERS].find((o) => o.product === p)?.color.image;
 
 /** Tamanho da meia sugerido pela numeração BR do chinelo (ex.: "41" ou "39/40" → M). */
 export function sockSizeFor(brSize: string | null | undefined): string {
@@ -57,6 +78,15 @@ export function upsellSelection(chosen: readonly string[], sockSize?: string | n
         title: socks.gatewayName,
         price: socks.price,
         label: `${socks.name} ${color.name} · ${sockSize}`,
+      };
+    }
+    if (isCap(p)) {
+      const color = CAP_OFFERS.find((o) => o.product === p)!.color;
+      return {
+        product: p,
+        title: caps.gatewayName,
+        price: caps.price,
+        label: `${caps.name} ${color.name}`,
       };
     }
     const o = p === "seguro" ? SHIPPING_INSURANCE : EXPRESS_SHIPPING;

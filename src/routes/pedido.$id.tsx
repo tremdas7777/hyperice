@@ -86,7 +86,7 @@ function Page() {
     }
     // Pedido principal pago: limpa o pedido em andamento.
     if (session && !session.isUpsell) clearCart();
-    // Pedido principal pago → ofertas (meias e seguro); ofertas pagas → página do envio expresso;
+    // Pedido principal pago → ofertas (meias, bonés e seguro); ofertas pagas → página do envio expresso;
     // envio expresso pago (ou sem sessão) → obrigado.
     if (session && !session.isUpsell)
       navigate({ to: "/upsell/$id", params: { id }, replace: true });
