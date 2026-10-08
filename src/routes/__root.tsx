@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { MindOfferModal } from "@/components/store/MindOfferModal";
 import { WhatsAppFloat } from "@/components/store/WhatsAppFloat";
 import { useAntiCopy } from "@/hooks/useAntiCopy";
 import { useMetaPixel } from "@/hooks/useMetaPixel";
@@ -119,9 +120,11 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // IDs dos pixels (públicos) lidos uma vez por visita. Sem banco/servidor, a loja abre sem pixels.
   loader: () =>
-    getPublicTracking().catch(
-      (): PixelIds => ({ metaPixelId: null, tiktokPixelId: null, utmifyPixelId: null }),
-    ),
+    getPublicTracking().catch((): PixelIds => ({
+      metaPixelId: null,
+      tiktokPixelId: null,
+      utmifyPixelId: null,
+    })),
   staleTime: Infinity,
   head: ({ loaderData }) => ({
     meta: [
@@ -201,6 +204,8 @@ function RootComponent() {
       <ShopProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        {/* Oferta do Nike Mind ao clicar em comprar (antes do checkout). */}
+        <MindOfferModal />
       </ShopProvider>
       <WhatsAppFloat />
       <Toaster position="top-center" />

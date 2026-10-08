@@ -14,7 +14,7 @@ import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { colors, kit, product, sizes, soldOut } from "@/data/store";
 import { colorById, kitSavings } from "@/lib/cart";
-import { useNavigate } from "@tanstack/react-router";
+import { useGoToCheckout } from "@/hooks/useGoToCheckout";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useTrackProductView } from "@/hooks/useTrackProductView";
 import { metaTrack } from "@/lib/meta-pixel";
@@ -298,7 +298,7 @@ export function ProductSection() {
     addToCart,
     setCartOpen,
   } = useShop();
-  const navigate = useNavigate();
+  const goToCheckout = useGoToCheckout();
   const { cardEnabled } = useStoreSettings();
   const sectionRef = useRef<HTMLElement>(null);
   useTrackProductView(sectionRef);
@@ -346,7 +346,7 @@ export function ProductSection() {
   };
 
   const handleBuyNow = () => {
-    if (add()) navigate({ to: "/checkout" });
+    if (add()) goToCheckout();
   };
 
   return (

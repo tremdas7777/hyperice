@@ -161,6 +161,105 @@ export const kit = {
   price: 267,
 };
 
+const MIND_IMG = (file: string) => `https://cdn.shopify.com/s/files/1/0828/2846/0285/files/${file}`;
+
+// Oferta do popup ao clicar em comprar: Nike Mind 001 Slide por um preço especial.
+// O preço é aplicado no servidor; "de" = preço normal de varejo do modelo.
+export const mindSlide = {
+  name: "Nike Mind 001 Slide",
+  price: 99,
+  compareAtPrice: 1199,
+  description:
+    "O slide conceitual da Nike: design escultural, conforto imediato e uma presença que não passa despercebida.",
+  sizes: ["34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"],
+  colors: [
+    {
+      id: "black-chrome",
+      name: "Black Chrome",
+      image: MIND_IMG("Slide_Nike_Mind_001_Black_Chrome_Preto.webp?v=1782999745"),
+      alt: MIND_IMG(
+        "slide-nike-mind-001-black-chrome-preto-lk-hq4307-001-1-7010926.webp?v=1782999746",
+      ),
+    },
+    {
+      id: "light-bone",
+      name: "Light Bone",
+      image: MIND_IMG("Slide_Nike_Mind_001_Light_Bone_Bege.webp?v=1782999742"),
+      alt: MIND_IMG(
+        "slide-nike-mind-001-light-bone-bege-lk-hq4307-002-1-5695871.webp?v=1782999743",
+      ),
+    },
+    {
+      id: "light-smoke-grey",
+      name: "Light Smoke Grey",
+      image: MIND_IMG("Slide_Nike_Mind_001_Light_Smoke_Grey_Cinza.webp?v=1782999741"),
+      alt: MIND_IMG(
+        "slide-nike-mind-001-light-smoke-grey-cinza-lk-hq4307-003-1-6709465.webp?v=1782999741",
+      ),
+    },
+    {
+      id: "fragment-black",
+      name: "Fragment Black",
+      image: MIND_IMG("nike-mind-001-slide-fragment-black-1_1.png?v=1782999685"),
+      alt: MIND_IMG("nike-mind-001-slide-fragment-black-2.png?v=1782999685"),
+    },
+    {
+      id: "geode-teal",
+      name: "Geode Teal",
+      image: MIND_IMG("Slide_Nike_Mind_001_Geode_Teal_Verde.webp?v=1782999688"),
+      alt: MIND_IMG(
+        "slide-nike-mind-001-geode-teal-verde-lk-hq4307-301-37-4152885.webp?v=1782999687",
+      ),
+    },
+    {
+      id: "mineral-slate",
+      name: "Mineral Slate",
+      image: MIND_IMG("Slide_Nike_Mind_001_Mineral_Slate_Verde.webp?v=1782999692"),
+      alt: MIND_IMG(
+        "slide-nike-mind-001-mineral-slate-verde-lk-hq4307-300-38-3141579.webp?v=1782999692",
+      ),
+    },
+    {
+      id: "blackened-blue",
+      name: "Blackened Blue",
+      image: MIND_IMG("Slide_Nike_Mind_001_Blackened_Blue_Azul.webp?v=1782999667"),
+      alt: MIND_IMG(
+        "slide-nike-mind-001-blackened-blue-azul-lk-hq4307-400-38-7213335.webp?v=1782999668",
+      ),
+    },
+    {
+      id: "pearl-pink",
+      name: "Pearl Pink",
+      image: MIND_IMG("Slide_Nike_Mind_001_Pearl_Pink_Rosa.webp?v=1782999669"),
+      alt: MIND_IMG("Slide_Nike_Mind_001_Pearl_Pink_Rosa.webp?v=1782999669"),
+    },
+    {
+      id: "white-speed-red",
+      name: "White Speed Red",
+      image: MIND_IMG("Slide_Nike_Mind_001_White_Speed_Red_Branco.webp?v=1782999684"),
+      alt: MIND_IMG(
+        "slide-nike-mind-001-white-speed-red-branco-lk-hq4307-101-34-7978313.webp?v=1782999684",
+      ),
+    },
+    {
+      id: "solar-red",
+      name: "Solar Red",
+      image: MIND_IMG("Slide_Nike_Mind_001_Solar_Red_Vermelho.webp?v=1782999744"),
+      alt: MIND_IMG(
+        "slide-nike-mind-001-solar-red-vermelho-lk-hq4307-600-1-5206126.webp?v=1782999744",
+      ),
+    },
+    {
+      id: "team-red",
+      name: "Team Red",
+      image: MIND_IMG("Nikee_Mind_001_Slide_Team_Red_University_Red.webp?v=1782999689"),
+      alt: MIND_IMG(
+        "slide-nike-mind-001-team-red-vermelho-lk-hq4307-601-3176250.webp?v=1782999689",
+      ),
+    },
+  ],
+};
+
 export const editorial = {
   heroGlow: NIKE_EDITORIAL("0ba4ca4a-0b11-4e29-a0bc-eb92c2ab31e4", "h_2432"),
   pod: NIKE_EDITORIAL("c68c4082-5d78-4788-877e-4a07f8f9b188", "h_1133"),

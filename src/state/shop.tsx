@@ -35,6 +35,9 @@ type ShopState = {
   cartCount: number;
   cartOpen: boolean;
   setCartOpen: (open: boolean) => void;
+  /** Popup da oferta (Nike Mind) aberto antes de ir para o checkout. */
+  mindOfferOpen: boolean;
+  setMindOfferOpen: (open: boolean) => void;
   toast: string | null;
   showToast: (msg: string) => void;
 };
@@ -62,6 +65,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartLoaded, setCartLoaded] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [mindOfferOpen, setMindOfferOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   // A página é renderizada no servidor: a sacola salva só é lida depois de montar.
@@ -91,6 +95,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   const addToCart = useCallback((item: CartItem) => {
     setCart((prev) => {
+      // Oferta do Nike Mind: um par por pedido (troca a escolha anterior, se houver).
+      if (item.type === "mind")
+        return [...prev.filter((i) => i.type !== "mind"), { ...item, qty: 1 }];
       const key = itemKey(item);
       const found = prev.find((i) => itemKey(i) === key);
       if (found) {
@@ -103,7 +110,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const updateQty = useCallback((key: string, qty: number) => {
     setCart((prev) =>
       prev
-        .map((i) => (itemKey(i) === key ? { ...i, qty: Math.max(0, Math.min(10, qty)) } : i))
+        .map((i) =>
+          itemKey(i) === key
+            ? { ...i, qty: Math.max(0, Math.min(i.type === "mind" ? 1 : 10, qty)) }
+            : i,
+        )
         .filter((i) => i.qty > 0),
     );
   }, []);
@@ -133,6 +144,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       cartCount: cart.reduce((n, i) => n + i.qty, 0),
       cartOpen,
       setCartOpen,
+      mindOfferOpen,
+      setMindOfferOpen,
       toast,
       showToast: setToast,
     }),
@@ -149,6 +162,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       updateQty,
       removeFromCart,
       cartOpen,
+      mindOfferOpen,
       toast,
     ],
   );

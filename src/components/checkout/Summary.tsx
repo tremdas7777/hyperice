@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { ChevronDown, Truck } from "lucide-react";
-import { colorById } from "@/lib/cart";
 import type { OrderLine } from "@/lib/order";
 import { brl } from "./parts";
 
@@ -14,18 +13,18 @@ type Props = {
 
 const totalOf = ({ products, frete, discount }: Props) => products - discount + frete;
 
-function Thumbs({ colorIds }: { colorIds: string[] }) {
+function Thumbs({ thumbs }: { thumbs: string[] }) {
   return (
     <div className="relative h-16 w-16 shrink-0">
-      {colorIds.map((id, i) => (
+      {thumbs.map((src, i) => (
         <img
-          key={`${id}-${i}`}
-          src={colorById(id).images[0].thumb}
+          key={`${src}-${i}`}
+          src={src}
           alt=""
           width={64}
           height={64}
           className={`absolute rounded-xl bg-photo object-cover ring-2 ring-white ${
-            colorIds.length > 1
+            thumbs.length > 1
               ? i === 0
                 ? "left-0 top-0 h-11 w-11"
                 : "bottom-0 right-0 h-11 w-11"
@@ -49,7 +48,7 @@ function Body(p: Props) {
       <ul className="space-y-4">
         {lines.map((l, i) => (
           <li key={`${l.title}-${i}`} className="flex gap-3">
-            <Thumbs colorIds={l.colorIds} />
+            <Thumbs thumbs={l.thumbs} />
             <div className="flex-1 text-[13px]">
               <p className="font-semibold leading-tight">{l.title}</p>
               <p className="mt-1 text-mute">{l.detail}</p>

@@ -67,7 +67,7 @@ function Page() {
             title: SHIPPING_INSURANCE.name,
             detail: "Reenvio ou reembolso em caso de extravio ou dano",
             price: SHIPPING_INSURANCE.price,
-            colorIds: [],
+            thumbs: [],
           },
         ],
         productPrice: SHIPPING_INSURANCE.price,

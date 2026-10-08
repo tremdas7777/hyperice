@@ -1,9 +1,9 @@
 import { Minus, Plus, ShoppingBag, Trash2, Truck, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect } from "react";
-import { kit, product } from "@/data/store";
-import { cartTotal, colorById, describeItem, itemKey, itemPairs, itemTotal } from "@/lib/cart";
-import { useNavigate } from "@tanstack/react-router";
+import { product } from "@/data/store";
+import { cartTotal, describeItem, itemKey, itemName, itemThumbs, itemTotal } from "@/lib/cart";
+import { useGoToCheckout } from "@/hooks/useGoToCheckout";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { trackCheckoutClick } from "@/lib/analytics";
 import { orderSummary } from "@/lib/order";
@@ -13,7 +13,7 @@ import { ShineButton } from "./primitives";
 
 export function CartDrawer() {
   const { cart, cartOpen, setCartOpen, updateQty, removeFromCart } = useShop();
-  const navigate = useNavigate();
+  const goToCheckout = useGoToCheckout();
   const { cardEnabled } = useStoreSettings();
   const subtotal = cartTotal(cart);
 
@@ -86,9 +86,7 @@ export function CartDrawer() {
                   <AnimatePresence initial={false}>
                     {cart.map((item) => {
                       const key = itemKey(item);
-                      const thumbs = itemPairs(item).map(
-                        (p) => colorById(p.colorId).images[0].thumb,
-                      );
+                      const thumbs = itemThumbs(item);
                       return (
                         <motion.li
                           key={key}
@@ -117,9 +115,7 @@ export function CartDrawer() {
                           <div className="flex flex-1 flex-col">
                             <div className="flex items-start justify-between gap-2">
                               <div>
-                                <p className="font-semibold leading-tight">
-                                  {item.type === "kit" ? kit.name : product.name}
-                                </p>
+                                <p className="font-semibold leading-tight">{itemName(item)}</p>
                                 {describeItem(item).map((line, i) => (
                                   <p key={i} className="mt-1 text-sm text-mute">
                                     {line}
@@ -148,7 +144,7 @@ export function CartDrawer() {
                                 </span>
                                 <button
                                   className="p-2 disabled:opacity-30"
-                                  disabled={item.qty >= 10}
+                                  disabled={item.qty >= (item.type === "mind" ? 1 : 10)}
                                   onClick={() => updateQty(key, item.qty + 1)}
                                   aria-label="Aumentar"
                                 >
@@ -193,7 +189,7 @@ export function CartDrawer() {
                       value: subtotal,
                     });
                     setCartOpen(false);
-                    navigate({ to: "/checkout" });
+                    goToCheckout();
                   }}
                 >
                   Finalizar compra

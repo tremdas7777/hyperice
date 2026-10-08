@@ -68,7 +68,7 @@ function Page() {
             title: EXPRESS_SHIPPING.name,
             detail: "Seu pedido sai com prioridade",
             price: EXPRESS_SHIPPING.price,
-            colorIds: [],
+            thumbs: [],
           },
         ],
         productPrice: EXPRESS_SHIPPING.price,
