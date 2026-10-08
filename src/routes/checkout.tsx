@@ -142,7 +142,7 @@ function EmptyCart() {
         <span className="grid h-16 w-16 place-items-center rounded-full bg-white">
           <ShoppingBag className="h-7 w-7 text-mute" />
         </span>
-        <h1 className="font-display text-4xl uppercase">Sua sacola está vazia</h1>
+        <h1 className="font-display text-4xl uppercase">Nenhum produto escolhido</h1>
         <p className="text-mute">Escolha a cor e a numeração do seu Hyperslide para continuar.</p>
         <a
           href="/#comprar"

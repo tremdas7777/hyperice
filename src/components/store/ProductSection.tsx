@@ -6,7 +6,6 @@ import {
   RefreshCcw,
   Ruler,
   ShieldCheck,
-  ShoppingBag,
   Truck,
   Zap,
 } from "lucide-react";
@@ -14,7 +13,7 @@ import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { colors, kit, product, sizes, soldOut } from "@/data/store";
 import { colorById, kitSavings } from "@/lib/cart";
-import { useGoToCheckout } from "@/hooks/useGoToCheckout";
+import { useBuyNow } from "@/hooks/useBuyNow";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useTrackProductView } from "@/hooks/useTrackProductView";
 import { metaTrack } from "@/lib/meta-pixel";
@@ -287,18 +286,8 @@ function OfferPicker() {
 }
 
 export function ProductSection() {
-  const {
-    offer,
-    colorId,
-    setColorId,
-    size,
-    setSize,
-    kitPairs,
-    setKitPair,
-    addToCart,
-    setCartOpen,
-  } = useShop();
-  const goToCheckout = useGoToCheckout();
+  const { offer, colorId, setColorId, size, setSize, kitPairs, setKitPair } = useShop();
+  const buyNow = useBuyNow();
   const { cardEnabled } = useStoreSettings();
   const sectionRef = useRef<HTMLElement>(null);
   useTrackProductView(sectionRef);
@@ -330,23 +319,14 @@ export function ProductSection() {
     return null;
   };
 
-  const add = () => {
+  const handleBuyNow = () => {
     const item = requireSelection();
-    if (!item) return null;
-    addToCart(item);
+    if (!item) return;
     metaTrack("AddToCart", {
       value: itemTotal(item),
       contentName: item.type === "kit" ? kit.name : product.name,
     });
-    return item;
-  };
-
-  const handleAdd = () => {
-    if (add()) setCartOpen(true);
-  };
-
-  const handleBuyNow = () => {
-    if (add()) goToCheckout();
+    buyNow(item);
   };
 
   return (
@@ -560,12 +540,6 @@ export function ProductSection() {
               Comprar agora
             </ShineButton>
           </div>
-          <button
-            onClick={handleAdd}
-            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-ink py-3.5 text-sm font-bold uppercase tracking-wider transition hover:bg-ink hover:text-white"
-          >
-            <ShoppingBag className="h-4 w-4" /> Adicionar à sacola
-          </button>
 
           <ul className="mt-8 grid grid-cols-2 gap-3 text-sm">
             {[

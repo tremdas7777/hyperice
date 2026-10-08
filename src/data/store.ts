@@ -164,10 +164,14 @@ export const kit = {
 const MIND_IMG = (file: string) => `https://cdn.shopify.com/s/files/1/0828/2846/0285/files/${file}`;
 
 // Oferta do popup ao clicar em comprar: Nike Mind 001 Slide por um preço especial.
-// O preço é aplicado no servidor; "de" = preço normal de varejo do modelo.
+// O preço é aplicado no servidor; "de" = preço normal de varejo do modelo (por par).
 export const mindSlide = {
   name: "Nike Mind 001 Slide",
-  price: 99,
+  /** Opções do seletor de unidades: preço total por quantidade de pares. */
+  offers: [
+    { pairs: 1, price: 99 },
+    { pairs: 2, price: 149 },
+  ],
   compareAtPrice: 1199,
   description:
     "O slide conceitual da Nike: design escultural, conforto imediato e uma presença que não passa despercebida.",

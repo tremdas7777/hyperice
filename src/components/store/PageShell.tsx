@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { AnnouncementBar } from "./AnnouncementBar";
-import { CartDrawer } from "./CartDrawer";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { Toast } from "./Toast";
@@ -13,7 +12,6 @@ export function PageShell({ children }: { children: ReactNode }) {
       <Header />
       <main className="min-h-[60vh]">{children}</main>
       <Footer />
-      <CartDrawer />
       <Toast />
     </div>
   );

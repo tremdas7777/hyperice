@@ -1,7 +1,6 @@
 import { AnnouncementBar } from "./AnnouncementBar";
 import { Audiences } from "./Audiences";
 import { BannerCarousel } from "./BannerCarousel";
-import { CartDrawer } from "./CartDrawer";
 import { ColorShowcase } from "./ColorShowcase";
 import { FAQ } from "./FAQ";
 import { FinalCTA } from "./FinalCTA";
@@ -35,7 +34,6 @@ export function StorePage() {
       </main>
       <Footer />
       <StickyBuyBar />
-      <CartDrawer />
       <Toast />
     </div>
   );

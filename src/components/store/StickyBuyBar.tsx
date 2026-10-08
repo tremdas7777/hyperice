@@ -3,15 +3,15 @@ import { useEffect, useState } from "react";
 import { kit, product } from "@/data/store";
 import { colorById } from "@/lib/cart";
 import { formatBRL, installment } from "@/lib/format";
-import { useGoToCheckout } from "@/hooks/useGoToCheckout";
+import { useBuyNow } from "@/hooks/useBuyNow";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useCurrentSelection, useSelectedColor, useShop } from "@/state/shop";
 
 /** Barra fixa que aparece fora do hero e da seção de compra. */
 export function StickyBuyBar() {
   const color = useSelectedColor();
-  const { offer, size, kitPairs, addToCart } = useShop();
-  const goToCheckout = useGoToCheckout();
+  const { offer, size, kitPairs } = useShop();
+  const buyNow = useBuyNow();
   const selection = useCurrentSelection();
   const { cardEnabled } = useStoreSettings();
   const isKit = offer === "kit";
@@ -46,9 +46,8 @@ export function StickyBuyBar() {
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    // Comprar = colocar na sacola e seguir para o checkout (passando pelo popup da oferta).
-    addToCart(selection);
-    goToCheckout();
+    // Compra direta: segue para o checkout passando pelo popup da oferta.
+    buyNow(selection);
   };
 
   return (

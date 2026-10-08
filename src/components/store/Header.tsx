@@ -1,8 +1,7 @@
-import { Menu, ShoppingBag, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react";
 import { useState } from "react";
 import { store } from "@/data/store";
-import { useShop } from "@/state/shop";
 
 const links = [
   { href: "/#comprar", label: "Comprar" },
@@ -13,7 +12,6 @@ const links = [
 ];
 
 export function Header() {
-  const { cartCount, setCartOpen } = useShop();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { scrollY } = useScroll();
@@ -52,27 +50,12 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => setCartOpen(true)}
-            className="relative rounded-full p-2.5 transition hover:bg-white/10"
-            aria-label={`Abrir sacola (${cartCount} ${cartCount === 1 ? "item" : "itens"})`}
+          <a
+            href="/#comprar"
+            className="rounded-full bg-heat px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-heat-hover"
           >
-            <ShoppingBag className="h-5 w-5" />
-            <AnimatePresence>
-              {cartCount > 0 && (
-                <motion.span
-                  key={cartCount}
-                  initial={{ scale: 0.4, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.4, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 18 }}
-                  className="absolute right-0.5 top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-heat px-1 text-[10px] font-bold"
-                >
-                  {cartCount}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </button>
+            Comprar
+          </a>
           <button
             className="rounded-full p-2.5 transition hover:bg-white/10 md:hidden"
             onClick={() => setOpen((o) => !o)}

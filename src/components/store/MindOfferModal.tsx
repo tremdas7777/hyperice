@@ -3,29 +3,40 @@ import { Check, Lock, RefreshCcw, Truck, X } from "lucide-react";
 import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect, useState } from "react";
 import { mindSlide } from "@/data/store";
-import { mindColorById } from "@/lib/cart";
+import { mindColorById, mindOfferPrice } from "@/lib/cart";
 import { formatBRL } from "@/lib/format";
 import { metaTrack } from "@/lib/meta-pixel";
 import { useShop } from "@/state/shop";
 
 const ease = [0.22, 1, 0.36, 1] as const;
+const MAX_PAIRS = Math.max(...mindSlide.offers.map((o) => o.pairs));
+
+type PairChoice = { colorId: string; size: string | null };
 
 /**
- * Popup ao clicar em comprar: oferece o Nike Mind 001 Slide por um preço especial antes do
- * checkout. "Aproveitar oferta" coloca o slide (cor + numeração) na sacola e segue; "Recusar" só segue.
+ * Popup ao clicar em comprar: oferece o Nike Mind 001 Slide (1 ou 2 pares) antes do checkout.
+ * "Aproveitar oferta" coloca os pares escolhidos (cor + numeração) no pedido e segue;
+ * "Recusar oferta" segue sem eles. O X só fecha.
  */
 export function MindOfferModal() {
-  const { mindOfferOpen, setMindOfferOpen, addToCart } = useShop();
+  const { mindOfferOpen, setMindOfferOpen, setMindItem } = useShop();
   const navigate = useNavigate();
-  const [colorId, setColorId] = useState(mindSlide.colors[0]!.id);
-  const [size, setSize] = useState<string | null>(null);
-  const [sizeError, setSizeError] = useState(false);
+  const [units, setUnits] = useState(1);
+  const [pairs, setPairs] = useState<PairChoice[]>(() =>
+    Array.from({ length: MAX_PAIRS }, () => ({ colorId: mindSlide.colors[0]!.id, size: null })),
+  );
+  const [active, setActive] = useState(0);
+  const [error, setError] = useState(false);
   const [mobile, setMobile] = useState(true);
   const shake = useAnimationControls();
 
-  const color = mindColorById(colorId);
-  const savings = mindSlide.compareAtPrice - mindSlide.price;
-  const off = Math.round((savings / mindSlide.compareAtPrice) * 100);
+  const chosen = pairs.slice(0, units);
+  const current = pairs[active] ?? pairs[0]!;
+  const color = mindColorById(current.colorId);
+  const price = mindOfferPrice(units);
+  const compareAt = mindSlide.compareAtPrice * units;
+  const off = Math.round((1 - price / compareAt) * 100);
+  const missing = chosen.findIndex((p) => !p.size);
 
   useEffect(() => {
     setMobile(!window.matchMedia("(min-width: 768px)").matches);
@@ -43,19 +54,41 @@ export function MindOfferModal() {
     };
   }, [mindOfferOpen, setMindOfferOpen]);
 
+  const updatePair = (index: number, change: Partial<PairChoice>) =>
+    setPairs((prev) => prev.map((p, i) => (i === index ? { ...p, ...change } : p)));
+
+  const chooseUnits = (n: number) => {
+    setUnits(n);
+    setError(false);
+    if (active >= n) setActive(0);
+  };
+
+  const chooseSize = (s: string) => {
+    updatePair(active, { size: s });
+    setError(false);
+    // Com 2 pares: escolheu a numeração do par 1 → já passa para o par 2.
+    const next = pairs.findIndex((p, i) => i !== active && i < units && !p.size);
+    if (next >= 0) setTimeout(() => setActive(next), 250);
+  };
+
   const continueToCheckout = () => {
     setMindOfferOpen(false);
     navigate({ to: "/checkout" });
   };
 
   const accept = () => {
-    if (!size) {
-      setSizeError(true);
+    if (missing >= 0) {
+      setActive(missing);
+      setError(true);
       shake.start({ x: [0, -8, 8, -6, 6, 0], transition: { duration: 0.4 } });
       return;
     }
-    addToCart({ type: "mind", colorId, size, qty: 1 });
-    metaTrack("AddToCart", { value: mindSlide.price, contentName: mindSlide.name });
+    setMindItem({
+      type: "mind",
+      pairs: chosen.map((p) => ({ colorId: p.colorId, size: p.size! })),
+      qty: 1,
+    });
+    metaTrack("AddToCart", { value: price, contentName: mindSlide.name });
     continueToCheckout();
   };
 
@@ -78,7 +111,7 @@ export function MindOfferModal() {
             exit={mobile ? { y: "100%" } : { opacity: 0, y: 24, scale: 0.97 }}
             transition={{ duration: 0.45, ease }}
             onClick={(e) => e.stopPropagation()}
-            className="relative max-h-[94svh] w-full overflow-y-auto rounded-t-[28px] bg-white font-sans text-ink shadow-2xl md:grid md:max-h-[90vh] md:max-w-[920px] md:grid-cols-[1.05fr_1fr] md:overflow-hidden md:rounded-[28px]"
+            className="relative max-h-[94svh] w-full overflow-y-auto rounded-t-[28px] bg-white font-sans text-ink shadow-2xl md:grid md:max-h-[90vh] md:max-w-[960px] md:grid-cols-[1fr_1.05fr] md:overflow-hidden md:rounded-[28px]"
           >
             <button
               onClick={() => setMindOfferOpen(false)}
@@ -88,11 +121,19 @@ export function MindOfferModal() {
               <X className="h-4 w-4" />
             </button>
 
-            {/* Foto da cor escolhida */}
+            {/* Foto da cor do par em edição */}
             <div className="relative flex flex-col items-center justify-center bg-[radial-gradient(circle_at_50%_45%,#ffffff,#eeebe5_75%)] px-6 pb-2 pt-6 md:p-10">
-              <span className="absolute left-4 top-4 grid h-14 w-14 place-items-center rounded-full bg-heat text-center text-white shadow-lg md:left-6 md:top-6 md:h-20 md:w-20">
-                <span className="font-display text-xl leading-none md:text-2xl">-{off}%</span>
-              </span>
+              <AnimatePresence mode="popLayout">
+                <motion.span
+                  key={off}
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.6, opacity: 0 }}
+                  className="absolute left-4 top-4 grid h-14 w-14 place-items-center rounded-full bg-heat text-center text-white shadow-lg md:left-6 md:top-6 md:h-20 md:w-20"
+                >
+                  <span className="font-display text-xl leading-none md:text-2xl">-{off}%</span>
+                </motion.span>
+              </AnimatePresence>
               <AnimatePresence mode="wait">
                 <motion.img
                   key={color.id}
@@ -102,10 +143,11 @@ export function MindOfferModal() {
                   animate={{ opacity: 1, x: 0, rotate: 0 }}
                   exit={{ opacity: 0, x: -24, rotate: 4 }}
                   transition={{ duration: 0.35, ease }}
-                  className="aspect-[5/3] w-[78%] max-w-[360px] scale-125 object-contain mix-blend-multiply md:aspect-square md:w-full"
+                  className="aspect-[5/3] w-[74%] max-w-[360px] scale-125 object-contain mix-blend-multiply md:aspect-square md:w-full"
                 />
               </AnimatePresence>
               <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-mute">
+                {units > 1 ? `Par ${active + 1} · ` : ""}
                 {color.name}
               </p>
             </div>
@@ -119,7 +161,7 @@ export function MindOfferModal() {
                 </span>
                 <h2
                   id="mind-offer-title"
-                  className="mt-3 font-display text-[1.75rem] uppercase leading-[0.95] md:text-[2.6rem]"
+                  className="mt-3 font-display text-[1.75rem] uppercase leading-[0.95] md:text-[2.4rem]"
                 >
                   Leve também o {mindSlide.name}
                 </h2>
@@ -127,35 +169,112 @@ export function MindOfferModal() {
                   {mindSlide.description}
                 </p>
 
-                <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-1 md:mt-4">
-                  <span className="text-sm text-mute line-through">
-                    {formatBRL(mindSlide.compareAtPrice)}
-                  </span>
-                  <span className="text-4xl font-extrabold leading-none tracking-tight">
-                    {formatBRL(mindSlide.price)}
+                {/* Seletor de unidades */}
+                <div
+                  className="mt-4 grid grid-cols-2 gap-2.5"
+                  role="radiogroup"
+                  aria-label="Quantidade"
+                >
+                  {mindSlide.offers.map((o) => {
+                    const on = units === o.pairs;
+                    const best = o.pairs === MAX_PAIRS && o.pairs > 1;
+                    return (
+                      <button
+                        key={o.pairs}
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => chooseUnits(o.pairs)}
+                        className={`relative flex flex-col items-start rounded-2xl border-2 px-3.5 py-3 text-left transition ${
+                          on ? "border-ink bg-ink text-white" : "border-stone hover:border-ink"
+                        }`}
+                      >
+                        {best && (
+                          <span className="absolute -top-2.5 right-2.5 rounded-full bg-heat px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+                            Melhor oferta
+                          </span>
+                        )}
+                        <span className="font-display text-xl uppercase leading-none">
+                          {o.pairs} {o.pairs > 1 ? "pares" : "par"}
+                        </span>
+                        <span className="mt-1.5 text-lg font-extrabold leading-none">
+                          {formatBRL(o.price)}
+                        </span>
+                        <span className={`mt-1 text-[11px] ${on ? "text-white/65" : "text-mute"}`}>
+                          {o.pairs > 1
+                            ? `${formatBRL(o.price / o.pairs)} cada`
+                            : `de ${formatBRL(mindSlide.compareAtPrice)}`}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                  <span className="text-sm text-mute line-through">{formatBRL(compareAt)}</span>
+                  <span className="text-3xl font-extrabold leading-none tracking-tight">
+                    {formatBRL(price)}
                   </span>
                   <span className="rounded-full bg-pix/10 px-2.5 py-1 text-xs font-bold text-pix">
-                    Economize {formatBRL(savings)}
+                    Economize {formatBRL(compareAt - price)}
                   </span>
                 </div>
 
+                {/* Abas dos pares (com 2 pares, cada um tem cor e numeração) */}
+                {units > 1 && (
+                  <div className="mt-5 grid grid-cols-2 gap-2">
+                    {chosen.map((p, i) => {
+                      const on = i === active;
+                      const bad = error && !p.size;
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setActive(i)}
+                          className={`flex items-center gap-2 rounded-xl border-2 p-2 text-left transition ${
+                            on ? "border-ink" : bad ? "border-red-300" : "border-stone"
+                          }`}
+                        >
+                          <img
+                            src={mindColorById(p.colorId).image}
+                            alt=""
+                            className="h-9 w-9 shrink-0 scale-125 rounded-lg bg-white object-contain"
+                          />
+                          <span className="min-w-0">
+                            <span className="block text-[11px] font-bold uppercase tracking-wider">
+                              Par {i + 1}
+                            </span>
+                            <span
+                              className={`block truncate text-[11px] ${bad ? "text-red-600" : "text-mute"}`}
+                            >
+                              {p.size
+                                ? `${mindColorById(p.colorId).name} · ${p.size}`
+                                : "Escolher numeração"}
+                            </span>
+                          </span>
+                          {p.size && <Check className="ml-auto h-4 w-4 shrink-0 text-pix" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {/* Cor */}
-                <div className="mt-5 md:mt-6">
+                <div className="mt-5">
                   <p className="text-sm font-semibold">
-                    Cor: <span className="font-normal text-mute">{color.name}</span>
+                    {units > 1 ? `Cor do par ${active + 1}: ` : "Cor: "}
+                    <span className="font-normal text-mute">{color.name}</span>
                   </p>
                   <div className="mt-2 grid grid-cols-6 gap-1.5">
                     {mindSlide.colors.map((c) => {
-                      const active = c.id === colorId;
+                      const on = c.id === current.colorId;
                       return (
                         <button
                           key={c.id}
-                          onClick={() => setColorId(c.id)}
+                          onClick={() => updatePair(active, { colorId: c.id })}
                           aria-label={c.name}
-                          aria-pressed={active}
+                          aria-pressed={on}
                           title={c.name}
                           className={`relative aspect-square overflow-hidden rounded-xl bg-white transition ${
-                            active
+                            on
                               ? "ring-2 ring-ink ring-offset-1"
                               : "ring-1 ring-stone hover:ring-ink/40"
                           }`}
@@ -166,7 +285,7 @@ export function MindOfferModal() {
                             loading="lazy"
                             className="h-full w-full scale-150 object-contain"
                           />
-                          {active && (
+                          {on && (
                             <span className="absolute right-0.5 top-0.5 grid h-4 w-4 place-items-center rounded-full bg-ink text-white">
                               <Check className="h-2.5 w-2.5" />
                             </span>
@@ -180,22 +299,21 @@ export function MindOfferModal() {
                 {/* Numeração */}
                 <motion.div animate={shake} className="mt-5">
                   <p
-                    className={`text-sm font-semibold ${sizeError && !size ? "text-red-600" : ""}`}
+                    className={`text-sm font-semibold ${error && !current.size ? "text-red-600" : ""}`}
                   >
-                    {sizeError && !size ? "Escolha a numeração para aproveitar" : "Numeração (BR)"}
+                    {error && !current.size
+                      ? `Escolha a numeração${units > 1 ? ` do par ${active + 1}` : ""}`
+                      : `Numeração${units > 1 ? ` do par ${active + 1}` : ""} (BR)`}
                   </p>
                   <div className="mt-2 grid grid-cols-6 gap-1.5">
                     {mindSlide.sizes.map((s) => (
                       <button
                         key={s}
-                        onClick={() => {
-                          setSize(s);
-                          setSizeError(false);
-                        }}
+                        onClick={() => chooseSize(s)}
                         className={`rounded-lg border py-2 text-[13px] font-semibold transition ${
-                          size === s
+                          current.size === s
                             ? "border-ink bg-ink text-white"
-                            : sizeError
+                            : error && !current.size
                               ? "border-red-300 hover:border-ink"
                               : "border-stone hover:border-ink"
                         }`}
@@ -227,7 +345,7 @@ export function MindOfferModal() {
                     Aproveitar oferta
                   </span>
                   <span className="relative text-[12px] font-medium opacity-90">
-                    + {formatBRL(mindSlide.price)} no seu pedido
+                    + {formatBRL(price)} no seu pedido · {units} {units > 1 ? "pares" : "par"}
                   </span>
                 </button>
                 <button

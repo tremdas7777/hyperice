@@ -72,7 +72,7 @@ const customerSchema = z.object({
 
 type CustomerInput = z.infer<typeof customerSchema>;
 
-/** Pedido com preço do servidor, a partir dos itens da sacola. */
+/** Pedido com preço do servidor, a partir dos itens enviados pelo navegador. */
 function buildOrder(d: CustomerInput) {
   const items = d.items as CartItem[];
   return { items, summary: orderSummary(items) };

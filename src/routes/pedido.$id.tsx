@@ -84,7 +84,7 @@ function Page() {
         value,
       });
     }
-    // Pedido principal pago: a sacola foi comprada.
+    // Pedido principal pago: limpa o pedido em andamento.
     if (session && !session.isUpsell) clearCart();
     // Pedido principal pago → oferta do seguro; seguro pago → página do envio expresso;
     // envio expresso pago (ou sem sessão) → obrigado.

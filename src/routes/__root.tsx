@@ -200,7 +200,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <SiteEffects />
-      {/* A sacola é compartilhada entre a loja e o checkout. */}
+      {/* O pedido em andamento é compartilhado entre a loja e o checkout. */}
       <ShopProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />

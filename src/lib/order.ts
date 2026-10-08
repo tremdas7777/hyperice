@@ -21,7 +21,7 @@ export const colorSchema = z.enum(colorIds);
 export const sizeSchema = z.enum(sizeIds);
 const qtySchema = z.number().int().min(1).max(10);
 
-/** Itens da sacola enviados pelo navegador. O preço é sempre recalculado no servidor. */
+/** Itens do pedido enviados pelo navegador. O preço é sempre recalculado no servidor. */
 export const cartItemSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("single"), colorId: colorSchema, size: sizeSchema, qty: qtySchema }),
   z.object({
@@ -31,8 +31,10 @@ export const cartItemSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("mind"),
-    colorId: z.enum(mindColorIds),
-    size: z.enum(mindSizes),
+    pairs: z
+      .array(z.object({ colorId: z.enum(mindColorIds), size: z.enum(mindSizes) }))
+      .min(1)
+      .max(Math.max(...mindSlide.offers.map((o) => o.pairs))),
     qty: z.literal(1),
   }),
 ]);
@@ -41,9 +43,12 @@ export const cartSchema = z
   .array(cartItemSchema)
   .min(1)
   .max(10)
-  // A oferta do Nike Mind só vale junto com o Hyperslide, uma unidade por pedido.
+  // A oferta do Nike Mind só vale junto com o Hyperslide, uma vez por pedido.
   .refine((items) => items.some((i) => i.type !== "mind"), "Escolha o seu Hyperslide")
-  .refine((items) => items.filter((i) => i.type === "mind").length <= 1, "Oferta limitada a 1 par");
+  .refine(
+    (items) => items.filter((i) => i.type === "mind").length <= 1,
+    "Oferta limitada a 1 por pedido",
+  );
 
 export type OrderLine = { title: string; detail: string; price: number; thumbs: string[] };
 
@@ -62,13 +67,11 @@ export function orderSummary(items: CartItem[]) {
   // Um item por par, como vai na caixa (para a transportadora/rastreio).
   const shipItems = items.flatMap((i) =>
     i.type === "mind"
-      ? [
-          {
-            name: `${mindSlide.name} — ${mindColorById(i.colorId).name} BR ${i.size}`,
-            quantity: i.qty,
-            price: mindSlide.price,
-          },
-        ]
+      ? i.pairs.map((p) => ({
+          name: `${mindSlide.name} — ${mindColorById(p.colorId).name} BR ${p.size}`,
+          quantity: 1,
+          price: unitPrice(i) / i.pairs.length,
+        }))
       : itemPairs(i).map((p) => ({
           name: `${product.name} — ${colorById(p.colorId).name} BR ${p.size}`,
           quantity: i.qty,

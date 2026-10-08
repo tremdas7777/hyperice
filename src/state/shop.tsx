@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { colors, defaultColor, kit } from "@/data/store";
-import { isCartItem, itemKey, type CartItem, type Pair } from "@/lib/cart";
+import { isCartItem, type CartItem, type Pair } from "@/lib/cart";
 
 export type { CartItem } from "@/lib/cart";
 
@@ -25,16 +25,15 @@ type ShopState = {
   setSize: (size: string | null) => void;
   kitPairs: KitPairChoice[];
   setKitPair: (index: number, pair: Partial<KitPairChoice>) => void;
+  /** Pedido em andamento: o item escolhido na loja + a oferta do Nike Mind (sem sacola). */
   cart: CartItem[];
-  /** A sacola salva já foi lida do navegador (ela só existe no cliente). */
+  /** O pedido salvo já foi lido do navegador (ele só existe no cliente). */
   cartLoaded: boolean;
-  addToCart: (item: CartItem) => void;
+  /** Começa a compra com o item escolhido (substitui o pedido anterior). */
+  startPurchase: (item: CartItem) => void;
+  /** Coloca (ou troca) a oferta do Nike Mind no pedido. */
+  setMindItem: (item: CartItem) => void;
   clearCart: () => void;
-  updateQty: (key: string, qty: number) => void;
-  removeFromCart: (key: string) => void;
-  cartCount: number;
-  cartOpen: boolean;
-  setCartOpen: (open: boolean) => void;
   /** Popup da oferta (Nike Mind) aberto antes de ir para o checkout. */
   mindOfferOpen: boolean;
   setMindOfferOpen: (open: boolean) => void;
@@ -64,11 +63,10 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [kitPairs, setKitPairs] = useState<KitPairChoice[]>(emptyKitPairs);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartLoaded, setCartLoaded] = useState(false);
-  const [cartOpen, setCartOpen] = useState(false);
   const [mindOfferOpen, setMindOfferOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  // A página é renderizada no servidor: a sacola salva só é lida depois de montar.
+  // A página é renderizada no servidor: o pedido salvo só é lido depois de montar.
   useEffect(() => {
     setCart(loadCart());
     setCartLoaded(true);
@@ -93,34 +91,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     setKitPairs((prev) => prev.map((p, i) => (i === index ? { ...p, ...pair } : p)));
   }, []);
 
-  const addToCart = useCallback((item: CartItem) => {
-    setCart((prev) => {
-      // Oferta do Nike Mind: um par por pedido (troca a escolha anterior, se houver).
-      if (item.type === "mind")
-        return [...prev.filter((i) => i.type !== "mind"), { ...item, qty: 1 }];
-      const key = itemKey(item);
-      const found = prev.find((i) => itemKey(i) === key);
-      if (found) {
-        return prev.map((i) => (i === found ? { ...i, qty: Math.min(10, i.qty + item.qty) } : i));
-      }
-      return [...prev, item];
-    });
-  }, []);
+  const startPurchase = useCallback((item: CartItem) => setCart([item]), []);
 
-  const updateQty = useCallback((key: string, qty: number) => {
-    setCart((prev) =>
-      prev
-        .map((i) =>
-          itemKey(i) === key
-            ? { ...i, qty: Math.max(0, Math.min(i.type === "mind" ? 1 : 10, qty)) }
-            : i,
-        )
-        .filter((i) => i.qty > 0),
-    );
-  }, []);
-
-  const removeFromCart = useCallback((key: string) => {
-    setCart((prev) => prev.filter((i) => itemKey(i) !== key));
+  const setMindItem = useCallback((item: CartItem) => {
+    // Uma oferta por pedido: troca a escolha anterior, se houver.
+    setCart((prev) => [...prev.filter((i) => i.type !== "mind"), item]);
   }, []);
 
   const clearCart = useCallback(() => setCart([]), []);
@@ -137,13 +112,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       setKitPair,
       cart,
       cartLoaded,
-      addToCart,
+      startPurchase,
+      setMindItem,
       clearCart,
-      updateQty,
-      removeFromCart,
-      cartCount: cart.reduce((n, i) => n + i.qty, 0),
-      cartOpen,
-      setCartOpen,
       mindOfferOpen,
       setMindOfferOpen,
       toast,
@@ -157,11 +128,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       setKitPair,
       cart,
       cartLoaded,
-      addToCart,
+      startPurchase,
+      setMindItem,
       clearCart,
-      updateQty,
-      removeFromCart,
-      cartOpen,
       mindOfferOpen,
       toast,
     ],
@@ -181,7 +150,7 @@ export function useSelectedColor() {
   return colors.find((c) => c.id === colorId) ?? defaultColor;
 }
 
-/** Item pronto para ir à sacola com a seleção atual, ou null se faltar tamanho. */
+/** Item da seleção atual pronto para a compra, ou null se faltar tamanho. */
 export function useCurrentSelection(qty = 1): CartItem | null {
   const { offer, colorId, size, kitPairs } = useShop();
   if (offer === "kit") {
