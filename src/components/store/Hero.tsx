@@ -1,7 +1,7 @@
 import { ArrowDown, Flame, Move3d, Waves, Wind } from "lucide-react";
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
-import { colors, product } from "@/data/store";
+import { colors, kit, product } from "@/data/store";
 import { formatBRL, installment, pixPrice, scrollToId } from "@/lib/format";
 import { useSelectedColor, useShop } from "@/state/shop";
 import { Eyebrow, ShineButton, SplitTitle } from "./primitives";
@@ -20,7 +20,7 @@ const particles = Array.from({ length: 14 }, (_, i) => ({
 }));
 
 export function Hero() {
-  const { colorId, setColorId } = useShop();
+  const { colorId, setColorId, setOffer } = useShop();
   const color = useSelectedColor();
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { margin: "0px 0px -10% 0px" });
@@ -91,6 +91,18 @@ export function Hero() {
                 {formatBRL(pixPrice(product.price))} no Pix
               </span>
             </span>
+            <button
+              onClick={() => {
+                setOffer("kit");
+                scrollToId("comprar");
+              }}
+              className="mt-3 inline-flex items-center gap-2 self-start rounded-full border border-heat/40 bg-heat/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-heat max-lg:self-center"
+            >
+              <span className="rounded-full bg-heat px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                Kit
+              </span>
+              2 pares (Preto + Orewood) por {formatBRL(kit.price)}
+            </button>
           </motion.div>
 
           <motion.div

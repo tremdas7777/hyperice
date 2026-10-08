@@ -1,7 +1,8 @@
 import { Minus, Plus, ShoppingBag, Trash2, Truck, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect } from "react";
-import { colors, defaultColor, product } from "@/data/store";
+import { kit, product } from "@/data/store";
+import { cartTotal, colorById, describeItem, itemKey, itemTotal } from "@/lib/cart";
 import { goToCheckout } from "@/lib/checkout";
 import { formatBRL, installment, pixPrice, scrollToId } from "@/lib/format";
 import { useShop } from "@/state/shop";
@@ -9,7 +10,7 @@ import { ShineButton } from "./primitives";
 
 export function CartDrawer() {
   const { cart, cartOpen, setCartOpen, updateQty, removeFromCart, showToast } = useShop();
-  const subtotal = cart.reduce((sum, i) => sum + i.qty * product.price, 0);
+  const subtotal = cartTotal(cart);
 
   useEffect(() => {
     if (!cartOpen) return;
@@ -79,31 +80,49 @@ export function CartDrawer() {
                 <ul className="space-y-4">
                   <AnimatePresence initial={false}>
                     {cart.map((item) => {
-                      const color = colors.find((c) => c.id === item.colorId) ?? defaultColor;
+                      const key = itemKey(item);
+                      const thumbs = (item.type === "kit" ? kit.colorIds : [item.colorId]).map(
+                        (id) => colorById(id).images[0].thumb,
+                      );
                       return (
                         <motion.li
-                          key={`${item.colorId}-${item.size}`}
+                          key={key}
                           layout
                           initial={{ opacity: 0, x: 30 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 30, height: 0 }}
                           className="flex gap-4"
                         >
-                          <img
-                            src={color.images[0].thumb}
-                            alt=""
-                            className="h-24 w-24 shrink-0 rounded-2xl bg-photo object-cover"
-                          />
+                          <div className="relative h-24 w-24 shrink-0">
+                            {thumbs.map((src, i) => (
+                              <img
+                                key={src}
+                                src={src}
+                                alt=""
+                                className={`absolute rounded-2xl bg-photo object-cover ring-2 ring-white ${
+                                  thumbs.length > 1
+                                    ? i === 0
+                                      ? "left-0 top-0 h-16 w-16"
+                                      : "bottom-0 right-0 h-16 w-16"
+                                    : "inset-0 h-full w-full"
+                                }`}
+                              />
+                            ))}
+                          </div>
                           <div className="flex flex-1 flex-col">
                             <div className="flex items-start justify-between gap-2">
                               <div>
-                                <p className="font-semibold leading-tight">{product.name}</p>
-                                <p className="mt-1 text-sm text-mute">
-                                  {color.name} · BR {item.size}
+                                <p className="font-semibold leading-tight">
+                                  {item.type === "kit" ? kit.name : product.name}
                                 </p>
+                                {describeItem(item).map((line) => (
+                                  <p key={line} className="mt-1 text-sm text-mute">
+                                    {line}
+                                  </p>
+                                ))}
                               </div>
                               <button
-                                onClick={() => removeFromCart(item.colorId, item.size)}
+                                onClick={() => removeFromCart(key)}
                                 className="rounded-full p-1.5 text-mute hover:bg-bone hover:text-ink"
                                 aria-label="Remover item"
                               >
@@ -114,7 +133,7 @@ export function CartDrawer() {
                               <div className="flex items-center rounded-full border border-stone">
                                 <button
                                   className="p-2"
-                                  onClick={() => updateQty(item.colorId, item.size, item.qty - 1)}
+                                  onClick={() => updateQty(key, item.qty - 1)}
                                   aria-label="Diminuir"
                                 >
                                   <Minus className="h-3.5 w-3.5" />
@@ -125,15 +144,13 @@ export function CartDrawer() {
                                 <button
                                   className="p-2 disabled:opacity-30"
                                   disabled={item.qty >= 10}
-                                  onClick={() => updateQty(item.colorId, item.size, item.qty + 1)}
+                                  onClick={() => updateQty(key, item.qty + 1)}
                                   aria-label="Aumentar"
                                 >
                                   <Plus className="h-3.5 w-3.5" />
                                 </button>
                               </div>
-                              <span className="font-bold">
-                                {formatBRL(item.qty * product.price)}
-                              </span>
+                              <span className="font-bold">{formatBRL(itemTotal(item))}</span>
                             </div>
                           </div>
                         </motion.li>

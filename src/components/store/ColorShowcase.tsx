@@ -1,8 +1,9 @@
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
-import { colors } from "@/data/store";
-import { scrollToId } from "@/lib/format";
+import { colors, kit } from "@/data/store";
+import { kitSavings } from "@/lib/cart";
+import { formatBRL, scrollToId } from "@/lib/format";
 import { useShop } from "@/state/shop";
 import { Eyebrow, SplitTitle } from "./primitives";
 
@@ -12,7 +13,7 @@ const backgrounds: Record<string, string> = {
 };
 
 export function ColorShowcase() {
-  const { setColorId } = useShop();
+  const { setColorId, setOffer } = useShop();
   const [hover, setHover] = useState<string | null>(null);
 
   return (
@@ -35,6 +36,7 @@ export function ColorShowcase() {
                 onMouseEnter={() => setHover(c.id)}
                 onMouseLeave={() => setHover(null)}
                 onClick={() => {
+                  setOffer("single");
                   setColorId(c.id);
                   scrollToId("comprar");
                 }}
@@ -61,6 +63,37 @@ export function ColorShowcase() {
             );
           })}
         </div>
+
+        {/* Oferta do kit */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.7 }}
+          className="relative mt-4 flex flex-col items-start gap-5 overflow-hidden rounded-3xl bg-ink p-7 text-white sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-heat/30 blur-3xl" />
+          <div className="relative">
+            <span className="rounded-full bg-heat px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em]">
+              Economize {formatBRL(kitSavings)}
+            </span>
+            <h3 className="mt-3 font-display text-4xl uppercase leading-none sm:text-5xl">
+              Leve as duas por {formatBRL(kit.price)}
+            </h3>
+            <p className="mt-2 text-sm text-white/65">
+              {kit.name} — você escolhe a numeração de cada par.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setOffer("kit");
+              scrollToId("comprar");
+            }}
+            className="relative inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-ink transition hover:bg-heat hover:text-white"
+          >
+            Quero o kit <ArrowRight className="h-4 w-4" />
+          </button>
+        </motion.div>
       </div>
     </section>
   );

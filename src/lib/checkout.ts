@@ -1,8 +1,17 @@
-import { checkout, checkoutUrls, colors, product, store } from "@/data/store";
-import type { CartItem } from "@/state/shop";
+import { checkout, checkoutUrls, kit, kitCheckoutUrl, product, store } from "@/data/store";
+import { cartTotal, describeItem, itemTotal, type CartItem } from "./cart";
 import { formatBRL, pixPrice } from "./format";
 
 export type CheckoutResult = { ok: true } | { ok: false; message: string };
+
+function linkFor(item: CartItem): string | null {
+  if (item.type === "kit") {
+    if (!kitCheckoutUrl) return null;
+    const params = new URLSearchParams(kit.colorIds.map((id) => [id, item.sizes[id] ?? ""]));
+    return `${kitCheckoutUrl}${kitCheckoutUrl.includes("?") ? "&" : "?"}${params}`;
+  }
+  return checkoutUrls[item.colorId]?.[item.size] ?? null;
+}
 
 export function goToCheckout(items: CartItem[]): CheckoutResult {
   const [first] = items;
@@ -10,11 +19,11 @@ export function goToCheckout(items: CartItem[]): CheckoutResult {
 
   if (checkout.mode === "link") {
     // Checkouts externos costumam aceitar um item por link; usamos o primeiro.
-    const url = checkoutUrls[first.colorId]?.[first.size];
+    const url = linkFor(first);
     if (!url) {
       return {
         ok: false,
-        message: "Checkout ainda não configurado para esta variante (src/data/store.ts).",
+        message: "Checkout ainda não configurado para esta oferta (src/data/store.ts).",
       };
     }
     window.location.href = url;
@@ -28,13 +37,13 @@ export function goToCheckout(items: CartItem[]): CheckoutResult {
     };
   }
 
-  const total = items.reduce((sum, i) => sum + i.qty * product.price, 0);
+  const total = cartTotal(items);
   const lines = items.map((i) => {
-    const color = colors.find((c) => c.id === i.colorId);
-    return `• ${i.qty}x ${product.name} — ${color?.name ?? i.colorId} — BR ${i.size}`;
+    const name = i.type === "kit" ? kit.name : product.name;
+    return `• ${i.qty}x ${name} (${describeItem(i).join(" + ")}) — ${formatBRL(itemTotal(i))}`;
   });
   const message = [
-    `Olá! Quero finalizar meu pedido na ${store.name}:`,
+    `Olá! Quero finalizar meu pedido${store.showLogo ? ` na ${store.name}` : ""}:`,
     "",
     ...lines,
     "",

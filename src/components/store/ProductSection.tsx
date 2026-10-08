@@ -12,10 +12,11 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { colors, product, sizes, soldOut } from "@/data/store";
+import { colors, kit, product, sizes, soldOut } from "@/data/store";
+import { colorById, kitSavings } from "@/lib/cart";
 import { goToCheckout } from "@/lib/checkout";
 import { formatBRL, installment, pixPrice } from "@/lib/format";
-import { useSelectedColor, useShop } from "@/state/shop";
+import { useCurrentSelection, useSelectedColor, useShop } from "@/state/shop";
 import { SizeGuideModal } from "./SizeGuideModal";
 import { Eyebrow, ShineButton } from "./primitives";
 import { SpinViewer } from "./SpinViewer";
@@ -185,38 +186,155 @@ function Accordion({
   );
 }
 
+function SizeGrid({
+  colorId,
+  value,
+  onChange,
+  error,
+}: {
+  colorId: string;
+  value: string | null;
+  onChange: (size: string) => void;
+  error: boolean;
+}) {
+  const unavailable = soldOut[colorId] ?? NONE_SOLD_OUT;
+  return (
+    <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+      {sizes.map((s) => {
+        const out = unavailable.includes(s.br);
+        const selected = value === s.br;
+        return (
+          <button
+            key={s.br}
+            disabled={out}
+            onClick={() => onChange(s.br)}
+            title={`US M ${s.usM} / W ${s.usW}`}
+            className={`relative rounded-xl border py-3 text-sm font-semibold transition ${
+              selected
+                ? "border-ink bg-ink text-white"
+                : out
+                  ? "cursor-not-allowed border-stone text-mute/50 line-through"
+                  : error
+                    ? "border-red-300 hover:border-ink"
+                    : "border-stone hover:border-ink"
+            }`}
+          >
+            {s.br}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Escolha entre 1 par e o kit com as duas cores, dentro da área de tamanho. */
+function OfferPicker() {
+  const { offer, setOffer } = useShop();
+  const options = [
+    {
+      id: "single" as const,
+      title: "1 par",
+      detail: "Escolha a cor",
+      price: product.price,
+      badge: null,
+    },
+    {
+      id: "kit" as const,
+      title: "2 pares",
+      detail: kit.colorIds.map((id) => colorById(id).name).join(" + "),
+      price: kit.price,
+      badge: `Economize ${formatBRL(kitSavings)}`,
+    },
+  ];
+  return (
+    <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Quantidade de pares">
+      {options.map((o) => {
+        const active = offer === o.id;
+        return (
+          <button
+            key={o.id}
+            role="radio"
+            aria-checked={active}
+            onClick={() => setOffer(o.id)}
+            className={`relative flex flex-col items-start rounded-2xl border-2 p-4 text-left transition ${
+              active ? "border-ink bg-ink text-white" : "border-stone hover:border-ink"
+            }`}
+          >
+            {o.badge && (
+              <span className="absolute -top-2.5 right-3 rounded-full bg-heat px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                {o.badge}
+              </span>
+            )}
+            <span className="font-display text-2xl uppercase leading-none">{o.title}</span>
+            <span className={`mt-1 text-xs ${active ? "text-white/70" : "text-mute"}`}>
+              {o.detail}
+            </span>
+            <span className="mt-3 text-lg font-extrabold">{formatBRL(o.price)}</span>
+            {o.id === "kit" && (
+              <span className={`text-xs ${active ? "text-white/60" : "text-mute"}`}>
+                {formatBRL(kit.price / kit.colorIds.length)} por par
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ProductSection() {
-  const { colorId, setColorId, size, setSize, addToCart, setCartOpen, showToast } = useShop();
+  const {
+    offer,
+    colorId,
+    setColorId,
+    size,
+    setSize,
+    kitSizes,
+    setKitSize,
+    addToCart,
+    setCartOpen,
+    showToast,
+  } = useShop();
   const color = useSelectedColor();
   const [qty, setQty] = useState(1);
+  const selection = useCurrentSelection(qty);
   const [guideOpen, setGuideOpen] = useState(false);
   const [sizeError, setSizeError] = useState(false);
   const shake = useAnimationControls();
 
   const unavailable = soldOut[colorId] ?? NONE_SOLD_OUT;
+  const isKit = offer === "kit";
+  const price = isKit ? kit.price : product.price;
+  const compareAt = isKit ? product.price * kit.colorIds.length : product.compareAtPrice;
 
   useEffect(() => {
     if (size && unavailable.includes(size)) setSize(null);
   }, [colorId, size, unavailable, setSize]);
 
-  const requireSize = () => {
-    if (size) return true;
+  useEffect(() => {
+    setSizeError(false);
+  }, [offer]);
+
+  const requireSelection = () => {
+    if (selection) return selection;
     setSizeError(true);
     shake.start({ x: [0, -8, 8, -6, 6, 0], transition: { duration: 0.4 } });
     document.getElementById("size-picker")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    return false;
+    return null;
   };
 
   const handleAdd = () => {
-    if (!requireSize() || !size) return;
-    addToCart({ colorId, size, qty });
+    const item = requireSelection();
+    if (!item) return;
+    addToCart(item);
     setCartOpen(true);
   };
 
   const handleBuyNow = () => {
-    if (!requireSize() || !size) return;
-    addToCart({ colorId, size, qty });
-    const result = goToCheckout([{ colorId, size, qty }]);
+    const item = requireSelection();
+    if (!item) return;
+    addToCart(item);
+    const result = goToCheckout([item]);
     if (!result.ok) {
       showToast(result.message);
       setCartOpen(true);
@@ -234,63 +352,58 @@ export function ProductSection() {
             {product.name}
           </h2>
           <p className="mt-2 text-sm text-mute">
-            Chinelo de recuperação · {color.name} · Estilo {color.style}
+            {isKit
+              ? `Chinelo de recuperação · ${kit.name}`
+              : `Chinelo de recuperação · ${color.name} · Estilo ${color.style}`}
           </p>
 
           <div className="mt-6 rounded-2xl bg-bone p-5">
             <div className="flex items-baseline gap-3">
-              {product.compareAtPrice && (
-                <span className="text-lg text-mute line-through">
-                  {formatBRL(product.compareAtPrice)}
-                </span>
+              {compareAt && (
+                <span className="text-lg text-mute line-through">{formatBRL(compareAt)}</span>
               )}
-              <span className="text-3xl font-extrabold tracking-tight">
-                {formatBRL(product.price)}
-              </span>
+              <span className="text-3xl font-extrabold tracking-tight">{formatBRL(price)}</span>
+              {isKit && <span className="text-sm font-semibold text-heat">2 pares</span>}
             </div>
             <p className="mt-1 text-sm text-mute">
               em até {product.installments}x de{" "}
-              <strong className="text-ink">{formatBRL(installment(product.price))}</strong> sem
-              juros
+              <strong className="text-ink">{formatBRL(installment(price))}</strong> sem juros
             </p>
             <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-pix/10 px-3 py-1 text-sm font-semibold text-pix">
-              {formatBRL(pixPrice(product.price))} no Pix ({Math.round(product.pixDiscount * 100)}%
-              off)
+              {formatBRL(pixPrice(price))} no Pix ({Math.round(product.pixDiscount * 100)}% off)
             </p>
           </div>
 
-          {/* Cor */}
-          <div className="mt-8">
-            <div className="flex items-center justify-between">
+          {/* Cor (no kit, as duas cores já estão incluídas) */}
+          {!isKit && (
+            <div className="mt-8">
               <span className="text-sm font-semibold">
                 Cor: <span className="font-normal text-mute">{color.name}</span>
               </span>
+              <div className="mt-3 flex gap-3">
+                {colors.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setColorId(c.id)}
+                    aria-pressed={colorId === c.id}
+                    aria-label={c.name}
+                    className={`relative h-20 w-20 overflow-hidden rounded-2xl bg-photo transition ${
+                      colorId === c.id
+                        ? "ring-2 ring-ink ring-offset-2"
+                        : "hover:ring-1 hover:ring-ink/30"
+                    }`}
+                  >
+                    <img src={c.images[0].thumb} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="mt-3 flex gap-3">
-              {colors.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setColorId(c.id)}
-                  aria-pressed={colorId === c.id}
-                  aria-label={c.name}
-                  className={`relative h-20 w-20 overflow-hidden rounded-2xl bg-photo transition ${
-                    colorId === c.id
-                      ? "ring-2 ring-ink ring-offset-2"
-                      : "hover:ring-1 hover:ring-ink/30"
-                  }`}
-                >
-                  <img src={c.images[0].thumb} alt="" className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
-          {/* Tamanho */}
+          {/* Quantidade de pares + tamanho */}
           <motion.div id="size-picker" animate={shake} className="mt-8 scroll-mt-28">
             <div className="flex items-center justify-between">
-              <span className={`text-sm font-semibold ${sizeError ? "text-red-600" : ""}`}>
-                {sizeError ? "Selecione um tamanho" : "Tamanho (BR)"}
-              </span>
+              <span className="text-sm font-semibold">Quantos pares?</span>
               <button
                 onClick={() => setGuideOpen(true)}
                 className="inline-flex items-center gap-1.5 text-sm text-mute underline-offset-4 hover:text-ink hover:underline"
@@ -298,36 +411,92 @@ export function ProductSection() {
                 <Ruler className="h-4 w-4" /> Guia de tamanhos
               </button>
             </div>
-            <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5">
-              {sizes.map((s) => {
-                const out = unavailable.includes(s.br);
-                const selected = size === s.br;
-                return (
-                  <button
-                    key={s.br}
-                    disabled={out}
-                    onClick={() => {
-                      setSize(s.br);
-                      setSizeError(false);
-                    }}
-                    title={`US M ${s.usM} / W ${s.usW}`}
-                    className={`relative rounded-xl border py-3 text-sm font-semibold transition ${
-                      selected
-                        ? "border-ink bg-ink text-white"
-                        : out
-                          ? "cursor-not-allowed border-stone text-mute/50 line-through"
-                          : sizeError
-                            ? "border-red-300 hover:border-ink"
-                            : "border-stone hover:border-ink"
-                    }`}
-                  >
-                    {s.br}
-                  </button>
-                );
-              })}
+            <div className="mt-3">
+              <OfferPicker />
             </div>
-          </motion.div>
 
+            <AnimatePresence mode="wait" initial={false}>
+              {isKit ? (
+                <motion.div
+                  key="kit"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25 }}
+                  className="mt-6 space-y-6"
+                >
+                  {kit.colorIds.map((id) => {
+                    const c = colorById(id);
+                    const missing = sizeError && !kitSizes[id];
+                    return (
+                      <div key={id}>
+                        <button
+                          onClick={() => setColorId(id)}
+                          className="flex items-center gap-3 text-left"
+                          aria-label={`Ver fotos do par ${c.name}`}
+                        >
+                          <img
+                            src={c.images[0].thumb}
+                            alt=""
+                            className={`h-11 w-11 rounded-xl bg-photo object-cover ${
+                              colorId === id ? "ring-2 ring-ink ring-offset-1" : ""
+                            }`}
+                          />
+                          <span
+                            className={`text-sm font-semibold ${missing ? "text-red-600" : ""}`}
+                          >
+                            {missing
+                              ? `Escolha o tamanho do par ${c.name}`
+                              : `Tamanho do par ${c.name}`}
+                            {kitSizes[id] && (
+                              <span className="font-normal text-mute"> · BR {kitSizes[id]}</span>
+                            )}
+                          </span>
+                        </button>
+                        <div className="mt-3">
+                          <SizeGrid
+                            colorId={id}
+                            value={kitSizes[id] ?? null}
+                            onChange={(s) => {
+                              setKitSize(id, s);
+                              setColorId(id);
+                            }}
+                            error={missing}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="single"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25 }}
+                  className="mt-6"
+                >
+                  <span
+                    className={`text-sm font-semibold ${sizeError && !size ? "text-red-600" : ""}`}
+                  >
+                    {sizeError && !size ? "Selecione um tamanho" : "Tamanho (BR)"}
+                  </span>
+                  <div className="mt-3">
+                    <SizeGrid
+                      colorId={colorId}
+                      value={size}
+                      onChange={(s) => {
+                        setSize(s);
+                        setSizeError(false);
+                      }}
+                      error={sizeError && !size}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
           {/* Quantidade + botões */}
           <div className="mt-8 flex items-center gap-3">
             <div className="flex items-center rounded-full border border-stone">

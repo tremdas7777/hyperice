@@ -1,13 +1,17 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { product } from "@/data/store";
+import { kit, product } from "@/data/store";
+import { colorById } from "@/lib/cart";
 import { formatBRL, installment } from "@/lib/format";
-import { useSelectedColor, useShop } from "@/state/shop";
+import { useCurrentSelection, useSelectedColor, useShop } from "@/state/shop";
 
 /** Barra fixa que aparece fora do hero e da seção de compra. */
 export function StickyBuyBar() {
   const color = useSelectedColor();
-  const { size, colorId, addToCart, setCartOpen } = useShop();
+  const { offer, size, addToCart, setCartOpen } = useShop();
+  const selection = useCurrentSelection();
+  const isKit = offer === "kit";
+  const price = isKit ? kit.price : product.price;
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -32,13 +36,13 @@ export function StickyBuyBar() {
   }, []);
 
   const onBuy = () => {
-    if (!size) {
+    if (!selection) {
       document
         .getElementById("size-picker")
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    addToCart({ colorId, size, qty: 1 });
+    addToCart(selection);
     setCartOpen(true);
   };
 
@@ -53,25 +57,29 @@ export function StickyBuyBar() {
           className="fixed inset-x-0 bottom-0 z-30 p-3 sm:bottom-4 sm:left-1/2 sm:right-auto sm:w-[560px] sm:-translate-x-1/2 sm:p-0"
         >
           <div className="flex items-center gap-3 rounded-2xl bg-ink/95 p-2.5 pr-3 text-white shadow-2xl backdrop-blur-xl">
-            <img
-              src={color.images[0].thumb}
-              alt=""
-              className="h-12 w-12 rounded-xl bg-photo object-cover"
-            />
+            <div className="flex shrink-0 -space-x-4">
+              {(isKit ? kit.colorIds.map(colorById) : [color]).map((c) => (
+                <img
+                  key={c.id}
+                  src={c.images[0].thumb}
+                  alt=""
+                  className="h-12 w-12 rounded-xl bg-photo object-cover ring-2 ring-ink"
+                />
+              ))}
+            </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">
-                {product.short} · {color.name}
+                {isKit ? kit.short : `${product.short} · ${color.name}`}
               </p>
               <p className="truncate text-xs text-white/60">
-                {formatBRL(product.price)} · {product.installments}x{" "}
-                {formatBRL(installment(product.price))}
+                {formatBRL(price)} · {product.installments}x {formatBRL(installment(price))}
               </p>
             </div>
             <button
               onClick={onBuy}
               className="shrink-0 rounded-full bg-heat px-5 py-3 text-xs font-bold uppercase tracking-wider transition hover:bg-heat-hover"
             >
-              {size ? `Comprar · ${size}` : "Escolher tamanho"}
+              {selection ? (isKit ? "Comprar kit" : `Comprar · ${size}`) : "Escolher tamanho"}
             </button>
           </div>
         </motion.div>

@@ -12,6 +12,7 @@ export const store = {
   email: "", // ex.: 'contato@sualoja.com.br'
   cnpj: "", // ex.: '00.000.000/0001-00'
   announcements: [
+    "Kit Preto + Orewood Brown por R$ 297",
     "Frete grátis para todo o Brasil",
     "12x sem juros no cartão",
     "5% de desconto no Pix",
@@ -22,7 +23,7 @@ export const store = {
 // Checkout:
 //  - 'whatsapp': envia o pedido (cor, tamanho, qtd) para o WhatsApp acima
 //  - 'link': redireciona para o checkout externo (Yampi, Cartpanda, Shopify…)
-//            usando o `checkoutUrl` de cada variante (cor + tamanho)
+//            usando `checkoutUrls` (par avulso) ou `kitCheckoutUrl` (kit)
 export const checkout = {
   mode: "whatsapp" as "whatsapp" | "link",
 };
@@ -127,6 +128,10 @@ export const checkoutUrls: Record<string, Record<string, string>> = {
   orewood: {},
 };
 
+// Link do kit no modo 'link'. A numeração de cada par vai junto na URL
+// (ex.: ?preto=41&orewood=39/40) para o checkout saber o que enviar.
+export const kitCheckoutUrl: string = "";
+
 export const soldOut: Record<string, string[]> = {
   preto: [],
   orewood: [],
@@ -136,7 +141,7 @@ export const product = {
   brand: "Nike x Hyperice",
   name: "Nike Air Zoom Hyperslide",
   short: "Hyperslide",
-  price: 1799.9,
+  price: 197,
   compareAtPrice: null as number | null, // ex.: 2199.9 para mostrar "de/por"
   installments: 12,
   pixDiscount: 0.05,
@@ -156,6 +161,15 @@ export const product = {
     "Envio em até 2 dias úteis após a confirmação do pagamento.",
     "Troca ou devolução em até 7 dias após o recebimento.",
   ],
+};
+
+// Oferta: um par de cada cor por um preço fechado. O cliente escolhe a
+// numeração de cada par separadamente.
+export const kit = {
+  name: "Kit Preto + Orewood Brown",
+  short: "Kit 2 pares",
+  colorIds: ["preto", "orewood"],
+  price: 297,
 };
 
 export const editorial = {
@@ -250,6 +264,10 @@ export const faq = [
   {
     q: "Qual tamanho devo escolher?",
     a: "Use o guia de tamanhos na página do produto. Se ficar entre dois números, recomendamos o maior — a tira é ajustável.",
+  },
+  {
+    q: "No kit, posso escolher um tamanho diferente para cada par?",
+    a: "Pode. No Kit Preto + Orewood Brown você escolhe a numeração do par preto e a do par Orewood separadamente — ideal para presentear ou dividir.",
   },
   {
     q: "Qual o prazo de entrega e como funciona a troca?",
