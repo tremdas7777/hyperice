@@ -2,8 +2,7 @@ import { ArrowDown, Flame, Move3d, Waves, Wind } from "lucide-react";
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 import { colors, product } from "@/data/store";
-import { formatBRL, installment, pixPrice, scrollToId } from "@/lib/format";
-import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { scrollToId } from "@/lib/format";
 import { useSelectedColor, useShop } from "@/state/shop";
 import { Eyebrow, ShineButton, SplitTitle } from "./primitives";
 import { SpinViewer } from "./SpinViewer";
@@ -21,7 +20,6 @@ const particles = Array.from({ length: 14 }, (_, i) => ({
 }));
 
 export function Hero() {
-  const { cardEnabled } = useStoreSettings();
   const { colorId, setColorId } = useShop();
   const color = useSelectedColor();
   const ref = useRef<HTMLElement>(null);
@@ -67,36 +65,9 @@ export function Hero() {
             transition={{ delay: 0.7, duration: 0.7 }}
             className="mt-6 max-w-md text-base leading-relaxed text-white/70 max-lg:mx-auto sm:text-lg"
           >
-            {product.name}: calor, vibração e amortecimento Air Zoom em um só chinelo. Seu
+            Nike Air Zoom Hyperslide: calor, massagem e amortecimento Air Zoom em um só chinelo. Seu
             pós-treino começa nos pés.
           </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.85, duration: 0.7 }}
-            className="mt-8 flex flex-col gap-1 max-lg:items-center"
-          >
-            <div className="flex items-baseline gap-3">
-              {product.compareAtPrice && (
-                <span className="text-lg text-white/40 line-through">
-                  {formatBRL(product.compareAtPrice)}
-                </span>
-              )}
-              <span className="text-3xl font-extrabold tracking-tight">
-                {formatBRL(product.price)}
-              </span>
-            </div>
-            {/* Parcelas e preço no Pix só com o cartão ativo no /admin. */}
-            {cardEnabled && (
-              <span className="text-sm text-white/60">
-                {product.installments}x de {formatBRL(installment(product.price))} sem juros ·{" "}
-                <span className="font-semibold text-emerald-400">
-                  {formatBRL(pixPrice(product.price))} no Pix
-                </span>
-              </span>
-            )}
-          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 16 }}
