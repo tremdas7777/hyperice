@@ -265,13 +265,12 @@ export const mindSlide = {
 };
 
 // Upsell pós-compra: meia Nike Everyday Lightweight (pacote com 3 pares), branca e/ou preta.
-// O preço é por cor (pacote) e é aplicado no servidor; "de" = preço normal de varejo.
+// O preço é por cor (pacote) e é aplicado no servidor.
 export const socks = {
   name: "Meia Nike Everyday Lightweight (3 pares)",
   /** Nome genérico enviado ao gateway. */
   gatewayName: "Meia esportiva",
   price: 19.9,
-  compareAtPrice: 149.99,
   description: "Cano invisível, fios macios com tecnologia antissuor para manter o pé seco.",
   colors: [
     { id: "branca", name: "Branca", image: "https://imgnike-a.akamaihd.net/768x768/02382151.jpg" },

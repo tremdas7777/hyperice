@@ -123,7 +123,6 @@ function Page() {
   }
 
   const firstName = session.name.trim().split(/\s+/)[0];
-  const sockOff = Math.round((1 - socks.price / socks.compareAtPrice) * 100);
   const insured = chosen.includes("seguro");
 
   return (
@@ -149,10 +148,7 @@ function Page() {
 
         {/* Meias: branca, preta ou as duas. */}
         <section className="mt-6 rounded-2xl border-2 border-stone bg-white p-4">
-          <p className="inline-block rounded-full bg-heat px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
-            -{sockOff}% · só nesta tela
-          </p>
-          <h2 className="mt-2 text-[16px] font-semibold leading-snug">{socks.name}</h2>
+          <h2 className="text-[16px] font-semibold leading-snug">{socks.name}</h2>
           <p className="mt-0.5 text-[13px] text-mute">{socks.description}</p>
 
           <p className="mt-4 text-[13px] font-semibold">
@@ -192,13 +188,8 @@ function Page() {
                   />
                   <span className="block border-t border-stone px-3 py-2.5">
                     <span className="block text-[13px] font-semibold">Meia {color.name}</span>
-                    <span className="flex flex-wrap items-baseline gap-x-1.5">
-                      <span className="text-[11px] text-mute line-through">
-                        {brl(socks.compareAtPrice)}
-                      </span>
-                      <span className="text-[17px] font-extrabold text-pix">
-                        {brl(socks.price)}
-                      </span>
+                    <span className="block text-[17px] font-extrabold text-pix">
+                      {brl(socks.price)}
                     </span>
                   </span>
                 </label>
