@@ -3,7 +3,6 @@ import { Check, Lock, RefreshCcw, Truck, X } from "lucide-react";
 import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect, useState } from "react";
 import { mindSlide } from "@/data/store";
-import { markMindOfferSeen } from "@/hooks/useGoToCheckout";
 import { mindColorById } from "@/lib/cart";
 import { formatBRL } from "@/lib/format";
 import { metaTrack } from "@/lib/meta-pixel";
@@ -45,7 +44,6 @@ export function MindOfferModal() {
   }, [mindOfferOpen, setMindOfferOpen]);
 
   const continueToCheckout = () => {
-    markMindOfferSeen();
     setMindOfferOpen(false);
     navigate({ to: "/checkout" });
   };
