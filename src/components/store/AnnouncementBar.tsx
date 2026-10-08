@@ -1,7 +1,10 @@
 import { store } from "@/data/store";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 
 export function AnnouncementBar() {
-  const items = [...store.announcements, ...store.announcements];
+  const { cardEnabled } = useStoreSettings();
+  const active = store.announcements.filter((a) => !a.card || cardEnabled).map((a) => a.text);
+  const items = [...active, ...active];
   return (
     <div className="relative overflow-hidden bg-heat text-white">
       <div className="flex w-max animate-marquee py-2 [--marquee-duration:28s] hover:[animation-play-state:paused]">

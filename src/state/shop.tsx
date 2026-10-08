@@ -8,12 +8,13 @@ import {
   type ReactNode,
 } from "react";
 import { colors, defaultColor, kit } from "@/data/store";
-import { isCartItem, itemKey, type CartItem } from "@/lib/cart";
+import { isCartItem, itemKey, type CartItem, type Pair } from "@/lib/cart";
 
 export type { CartItem } from "@/lib/cart";
 
 export type Offer = "single" | "kit";
-type KitSizes = Record<string, string | null>;
+/** Escolha de cada par do kit (o tamanho fica vazio até o cliente escolher). */
+export type KitPairChoice = { colorId: string; size: string | null };
 
 type ShopState = {
   offer: Offer;
@@ -22,10 +23,13 @@ type ShopState = {
   setColorId: (id: string) => void;
   size: string | null;
   setSize: (size: string | null) => void;
-  kitSizes: KitSizes;
-  setKitSize: (colorId: string, size: string | null) => void;
+  kitPairs: KitPairChoice[];
+  setKitPair: (index: number, pair: Partial<KitPairChoice>) => void;
   cart: CartItem[];
+  /** A sacola salva já foi lida do navegador (ela só existe no cliente). */
+  cartLoaded: boolean;
   addToCart: (item: CartItem) => void;
+  clearCart: () => void;
   updateQty: (key: string, qty: number) => void;
   removeFromCart: (key: string) => void;
   cartCount: number;
@@ -37,7 +41,8 @@ type ShopState = {
 
 const ShopContext = createContext<ShopState | null>(null);
 const CART_KEY = "hyperslide-cart-v2";
-const emptyKitSizes = (): KitSizes => Object.fromEntries(kit.colorIds.map((id) => [id, null]));
+const emptyKitPairs = (): KitPairChoice[] =>
+  Array.from({ length: kit.pairs }, () => ({ colorId: defaultColor.id, size: null }));
 
 function loadCart(): CartItem[] {
   try {
@@ -53,7 +58,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [offer, setOffer] = useState<Offer>("single");
   const [colorId, setColorId] = useState(defaultColor.id);
   const [size, setSize] = useState<string | null>(null);
-  const [kitSizes, setKitSizes] = useState<KitSizes>(emptyKitSizes);
+  const [kitPairs, setKitPairs] = useState<KitPairChoice[]>(emptyKitPairs);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartLoaded, setCartLoaded] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -80,8 +85,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const setKitSize = useCallback((cId: string, s: string | null) => {
-    setKitSizes((prev) => ({ ...prev, [cId]: s }));
+  const setKitPair = useCallback((index: number, pair: Partial<KitPairChoice>) => {
+    setKitPairs((prev) => prev.map((p, i) => (i === index ? { ...p, ...pair } : p)));
   }, []);
 
   const addToCart = useCallback((item: CartItem) => {
@@ -107,6 +112,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     setCart((prev) => prev.filter((i) => itemKey(i) !== key));
   }, []);
 
+  const clearCart = useCallback(() => setCart([]), []);
+
   const value = useMemo<ShopState>(
     () => ({
       offer,
@@ -115,10 +122,12 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       setColorId,
       size,
       setSize,
-      kitSizes,
-      setKitSize,
+      kitPairs,
+      setKitPair,
       cart,
+      cartLoaded,
       addToCart,
+      clearCart,
       updateQty,
       removeFromCart,
       cartCount: cart.reduce((n, i) => n + i.qty, 0),
@@ -131,10 +140,12 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       offer,
       colorId,
       size,
-      kitSizes,
-      setKitSize,
+      kitPairs,
+      setKitPair,
       cart,
+      cartLoaded,
       addToCart,
+      clearCart,
       updateQty,
       removeFromCart,
       cartOpen,
@@ -158,15 +169,14 @@ export function useSelectedColor() {
 
 /** Item pronto para ir à sacola com a seleção atual, ou null se faltar tamanho. */
 export function useCurrentSelection(qty = 1): CartItem | null {
-  const { offer, colorId, size, kitSizes } = useShop();
+  const { offer, colorId, size, kitPairs } = useShop();
   if (offer === "kit") {
-    const sizes: Record<string, string> = {};
-    for (const id of kit.colorIds) {
-      const s = kitSizes[id];
-      if (!s) return null;
-      sizes[id] = s;
+    const pairs: Pair[] = [];
+    for (const p of kitPairs) {
+      if (!p.size) return null;
+      pairs.push({ colorId: p.colorId, size: p.size });
     }
-    return { type: "kit", sizes, qty };
+    return { type: "kit", pairs, qty };
   }
   return size ? { type: "single", colorId, size, qty } : null;
 }

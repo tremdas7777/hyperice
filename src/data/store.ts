@@ -1,31 +1,29 @@
 // ─────────────────────────────────────────────────────────────
 // CONFIGURAÇÃO DA LOJA — edite aqui nome, preço, variantes,
-// imagens, textos e checkout. Todo o site lê deste arquivo.
+// imagens e textos. Todo o site (loja e checkout) lê deste arquivo.
+// Chaves de gateway, pixels e tokens ficam no painel /admin.
 // ─────────────────────────────────────────────────────────────
 
 export const store = {
   name: "RECOVR",
   showLogo: false, // mostra o nome acima como logo no cabeçalho e no rodapé
   tagline: "Recovery wear",
-  whatsapp: "", // ex.: '5511999999999' — usado no checkout via WhatsApp e no botão de ajuda
+  /** Nome genérico enviado ao gateway (aparece na cobrança) — sem detalhes do produto real. */
+  gatewayName: "Recovery Slide",
+  // WhatsApp de suporte (DDI + DDD + número). O botão só aparece se for ativado no /admin.
+  whatsapp: "", // ex.: '5511999999999'
   instagram: "", // ex.: 'https://instagram.com/sualoja'
   email: "", // ex.: 'contato@sualoja.com.br'
   cnpj: "", // ex.: '00.000.000/0001-00'
+  city: "São Paulo, SP — Brasil",
+  // `card: true` = só aparece quando o cartão estiver ativo no /admin.
   announcements: [
-    "Kit Preto + Orewood Brown por R$ 297",
-    "Frete grátis para todo o Brasil",
-    "12x sem juros no cartão",
-    "5% de desconto no Pix",
-    "Troca fácil em até 7 dias",
-  ],
-};
-
-// Checkout:
-//  - 'whatsapp': envia o pedido (cor, tamanho, qtd) para o WhatsApp acima
-//  - 'link': redireciona para o checkout externo (Yampi, Cartpanda, Shopify…)
-//            usando `checkoutUrls` (par avulso) ou `kitCheckoutUrl` (kit)
-export const checkout = {
-  mode: "whatsapp" as "whatsapp" | "link",
+    { text: "Kit 2 pares por R$ 267" },
+    { text: "Frete grátis para todo o Brasil" },
+    { text: "12x sem juros no cartão", card: true },
+    { text: "5% de desconto no Pix", card: true },
+    { text: "Troca fácil em até 7 dias" },
+  ] as { text: string; card?: boolean }[],
 };
 
 const NIKE_PDP = (id: string, preset = "t_web_pdp_936_v2") =>
@@ -121,17 +119,7 @@ export const colors: ColorVariant[] = [
 export const defaultColor = colors[0]!;
 
 // Variantes = cor × tamanho, tudo em um único produto.
-// Para usar checkout por link, preencha `checkoutUrls[corId][tamanhoBR]`.
 // Para marcar um tamanho como esgotado, adicione em `soldOut[corId]`.
-export const checkoutUrls: Record<string, Record<string, string>> = {
-  preto: {},
-  orewood: {},
-};
-
-// Link do kit no modo 'link'. A numeração de cada par vai junto na URL
-// (ex.: ?preto=41&orewood=39/40) para o checkout saber o que enviar.
-export const kitCheckoutUrl: string = "";
-
 export const soldOut: Record<string, string[]> = {
   preto: [],
   orewood: [],
@@ -143,6 +131,7 @@ export const product = {
   short: "Hyperslide",
   price: 197,
   compareAtPrice: null as number | null, // ex.: 2199.9 para mostrar "de/por"
+  // Parcelas no cartão e desconto do Pix valem quando o cartão está ativo no /admin.
   installments: 12,
   pixDiscount: 0.05,
   description:
@@ -163,13 +152,13 @@ export const product = {
   ],
 };
 
-// Oferta: um par de cada cor por um preço fechado. O cliente escolhe a
-// numeração de cada par separadamente.
+// Oferta: 2 pares por um preço fechado. O cliente escolhe a cor e a numeração
+// de cada par (podem ser iguais ou diferentes).
 export const kit = {
-  name: "Kit Preto + Orewood Brown",
+  name: "Kit 2 pares",
   short: "Kit 2 pares",
-  colorIds: ["preto", "orewood"],
-  price: 297,
+  pairs: 2,
+  price: 267,
 };
 
 export const editorial = {
@@ -266,8 +255,8 @@ export const faq = [
     a: "Use o guia de tamanhos na página do produto. Se ficar entre dois números, recomendamos o maior — a tira é ajustável.",
   },
   {
-    q: "No kit, posso escolher um tamanho diferente para cada par?",
-    a: "Pode. No Kit Preto + Orewood Brown você escolhe a numeração do par preto e a do par Orewood separadamente — ideal para presentear ou dividir.",
+    q: "No kit de 2 pares, posso escolher a cor e o tamanho de cada par?",
+    a: "Pode. Você escolhe a cor (Preto ou Orewood Brown) e a numeração de cada par separadamente — dois iguais ou um de cada, como preferir. Ideal para presentear ou dividir.",
   },
   {
     q: "Qual o prazo de entrega e como funciona a troca?",

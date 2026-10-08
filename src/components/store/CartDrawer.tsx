@@ -2,14 +2,19 @@ import { Minus, Plus, ShoppingBag, Trash2, Truck, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect } from "react";
 import { kit, product } from "@/data/store";
-import { cartTotal, colorById, describeItem, itemKey, itemTotal } from "@/lib/cart";
-import { goToCheckout } from "@/lib/checkout";
+import { cartTotal, colorById, describeItem, itemKey, itemPairs, itemTotal } from "@/lib/cart";
+import { useNavigate } from "@tanstack/react-router";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { trackCheckoutClick } from "@/lib/analytics";
+import { orderSummary } from "@/lib/order";
 import { formatBRL, installment, pixPrice, scrollToId } from "@/lib/format";
 import { useShop } from "@/state/shop";
 import { ShineButton } from "./primitives";
 
 export function CartDrawer() {
-  const { cart, cartOpen, setCartOpen, updateQty, removeFromCart, showToast } = useShop();
+  const { cart, cartOpen, setCartOpen, updateQty, removeFromCart } = useShop();
+  const navigate = useNavigate();
+  const { cardEnabled } = useStoreSettings();
   const subtotal = cartTotal(cart);
 
   useEffect(() => {
@@ -81,8 +86,8 @@ export function CartDrawer() {
                   <AnimatePresence initial={false}>
                     {cart.map((item) => {
                       const key = itemKey(item);
-                      const thumbs = (item.type === "kit" ? kit.colorIds : [item.colorId]).map(
-                        (id) => colorById(id).images[0].thumb,
+                      const thumbs = itemPairs(item).map(
+                        (p) => colorById(p.colorId).images[0].thumb,
                       );
                       return (
                         <motion.li
@@ -96,7 +101,7 @@ export function CartDrawer() {
                           <div className="relative h-24 w-24 shrink-0">
                             {thumbs.map((src, i) => (
                               <img
-                                key={src}
+                                key={`${src}-${i}`}
                                 src={src}
                                 alt=""
                                 className={`absolute rounded-2xl bg-photo object-cover ring-2 ring-white ${
@@ -115,8 +120,8 @@ export function CartDrawer() {
                                 <p className="font-semibold leading-tight">
                                   {item.type === "kit" ? kit.name : product.name}
                                 </p>
-                                {describeItem(item).map((line) => (
-                                  <p key={line} className="mt-1 text-sm text-mute">
+                                {describeItem(item).map((line, i) => (
+                                  <p key={i} className="mt-1 text-sm text-mute">
                                     {line}
                                   </p>
                                 ))}
@@ -171,15 +176,24 @@ export function CartDrawer() {
                   <span className="font-semibold">Total</span>
                   <span className="text-2xl font-extrabold">{formatBRL(subtotal)}</span>
                 </div>
-                <p className="mt-1 text-right text-xs text-mute">
-                  {product.installments}x de {formatBRL(installment(subtotal))} ou{" "}
-                  <strong className="text-pix">{formatBRL(pixPrice(subtotal))} no Pix</strong>
-                </p>
+                {cardEnabled && (
+                  <p className="mt-1 text-right text-xs text-mute">
+                    {product.installments}x de {formatBRL(installment(subtotal))} ou{" "}
+                    <strong className="text-pix">{formatBRL(pixPrice(subtotal))} no Pix</strong>
+                  </p>
+                )}
                 <ShineButton
                   className="mt-4 w-full"
                   onClick={() => {
-                    const r = goToCheckout(cart);
-                    if (!r.ok) showToast(r.message);
+                    const s = orderSummary(cart);
+                    trackCheckoutClick({
+                      source: "cart_drawer",
+                      bundleId: s.bundleId,
+                      bundleName: s.bundleName,
+                      value: subtotal,
+                    });
+                    setCartOpen(false);
+                    navigate({ to: "/checkout" });
                   }}
                 >
                   Finalizar compra

@@ -3,6 +3,7 @@ import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 import { colors, kit, product } from "@/data/store";
 import { formatBRL, installment, pixPrice, scrollToId } from "@/lib/format";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useSelectedColor, useShop } from "@/state/shop";
 import { Eyebrow, ShineButton, SplitTitle } from "./primitives";
 import { SpinViewer } from "./SpinViewer";
@@ -20,6 +21,7 @@ const particles = Array.from({ length: 14 }, (_, i) => ({
 }));
 
 export function Hero() {
+  const { cardEnabled } = useStoreSettings();
   const { colorId, setColorId, setOffer } = useShop();
   const color = useSelectedColor();
   const ref = useRef<HTMLElement>(null);
@@ -86,10 +88,19 @@ export function Hero() {
               </span>
             </div>
             <span className="text-sm text-white/60">
-              {product.installments}x de {formatBRL(installment(product.price))} sem juros ·{" "}
-              <span className="font-semibold text-emerald-400">
-                {formatBRL(pixPrice(product.price))} no Pix
-              </span>
+              {cardEnabled ? (
+                <>
+                  {product.installments}x de {formatBRL(installment(product.price))} sem juros ·{" "}
+                  <span className="font-semibold text-emerald-400">
+                    {formatBRL(pixPrice(product.price))} no Pix
+                  </span>
+                </>
+              ) : (
+                <>
+                  À vista no Pix ·{" "}
+                  <span className="font-semibold text-emerald-400">Frete grátis</span>
+                </>
+              )}
             </span>
             <button
               onClick={() => {
@@ -101,7 +112,7 @@ export function Hero() {
               <span className="rounded-full bg-heat px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
                 Kit
               </span>
-              2 pares (Preto + Orewood) por {formatBRL(kit.price)}
+              2 pares por {formatBRL(kit.price)} — você escolhe as cores
             </button>
           </motion.div>
 

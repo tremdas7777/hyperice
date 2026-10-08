@@ -78,10 +78,10 @@ export function ColorShowcase() {
               Economize {formatBRL(kitSavings)}
             </span>
             <h3 className="mt-3 font-display text-4xl uppercase leading-none sm:text-5xl">
-              Leve as duas por {formatBRL(kit.price)}
+              Leve 2 pares por {formatBRL(kit.price)}
             </h3>
             <p className="mt-2 text-sm text-white/65">
-              {kit.name} — você escolhe a numeração de cada par.
+              Você escolhe a cor e a numeração de cada par — dois iguais ou um de cada.
             </p>
           </div>
           <button

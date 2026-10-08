@@ -3,13 +3,15 @@ import { useEffect, useState } from "react";
 import { kit, product } from "@/data/store";
 import { colorById } from "@/lib/cart";
 import { formatBRL, installment } from "@/lib/format";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useCurrentSelection, useSelectedColor, useShop } from "@/state/shop";
 
 /** Barra fixa que aparece fora do hero e da seção de compra. */
 export function StickyBuyBar() {
   const color = useSelectedColor();
-  const { offer, size, addToCart, setCartOpen } = useShop();
+  const { offer, size, kitPairs, addToCart, setCartOpen } = useShop();
   const selection = useCurrentSelection();
+  const { cardEnabled } = useStoreSettings();
   const isKit = offer === "kit";
   const price = isKit ? kit.price : product.price;
   const [visible, setVisible] = useState(false);
@@ -58,9 +60,9 @@ export function StickyBuyBar() {
         >
           <div className="flex items-center gap-3 rounded-2xl bg-ink/95 p-2.5 pr-3 text-white shadow-2xl backdrop-blur-xl">
             <div className="flex shrink-0 -space-x-4">
-              {(isKit ? kit.colorIds.map(colorById) : [color]).map((c) => (
+              {(isKit ? kitPairs.map((p) => colorById(p.colorId)) : [color]).map((c, i) => (
                 <img
-                  key={c.id}
+                  key={`${c.id}-${i}`}
                   src={c.images[0].thumb}
                   alt=""
                   className="h-12 w-12 rounded-xl bg-photo object-cover ring-2 ring-ink"
@@ -72,7 +74,10 @@ export function StickyBuyBar() {
                 {isKit ? kit.short : `${product.short} · ${color.name}`}
               </p>
               <p className="truncate text-xs text-white/60">
-                {formatBRL(price)} · {product.installments}x {formatBRL(installment(price))}
+                {formatBRL(price)}
+                {cardEnabled
+                  ? ` · ${product.installments}x ${formatBRL(installment(price))}`
+                  : " · frete grátis"}
               </p>
             </div>
             <button

@@ -14,7 +14,11 @@ import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { colors, kit, product, sizes, soldOut } from "@/data/store";
 import { colorById, kitSavings } from "@/lib/cart";
-import { goToCheckout } from "@/lib/checkout";
+import { useNavigate } from "@tanstack/react-router";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useTrackProductView } from "@/hooks/useTrackProductView";
+import { metaTrack } from "@/lib/meta-pixel";
+import { itemTotal } from "@/lib/cart";
 import { formatBRL, installment, pixPrice } from "@/lib/format";
 import { useCurrentSelection, useSelectedColor, useShop } from "@/state/shop";
 import { SizeGuideModal } from "./SizeGuideModal";
@@ -241,7 +245,7 @@ function OfferPicker() {
     {
       id: "kit" as const,
       title: "2 pares",
-      detail: kit.colorIds.map((id) => colorById(id).name).join(" + "),
+      detail: "Escolha a cor de cada par",
       price: kit.price,
       badge: `Economize ${formatBRL(kitSavings)}`,
     },
@@ -272,7 +276,7 @@ function OfferPicker() {
             <span className="mt-3 text-lg font-extrabold">{formatBRL(o.price)}</span>
             {o.id === "kit" && (
               <span className={`text-xs ${active ? "text-white/60" : "text-mute"}`}>
-                {formatBRL(kit.price / kit.colorIds.length)} por par
+                {formatBRL(kit.price / kit.pairs)} por par
               </span>
             )}
           </button>
@@ -289,12 +293,15 @@ export function ProductSection() {
     setColorId,
     size,
     setSize,
-    kitSizes,
-    setKitSize,
+    kitPairs,
+    setKitPair,
     addToCart,
     setCartOpen,
-    showToast,
   } = useShop();
+  const navigate = useNavigate();
+  const { cardEnabled } = useStoreSettings();
+  const sectionRef = useRef<HTMLElement>(null);
+  useTrackProductView(sectionRef);
   const color = useSelectedColor();
   const [qty, setQty] = useState(1);
   const selection = useCurrentSelection(qty);
@@ -305,7 +312,7 @@ export function ProductSection() {
   const unavailable = soldOut[colorId] ?? NONE_SOLD_OUT;
   const isKit = offer === "kit";
   const price = isKit ? kit.price : product.price;
-  const compareAt = isKit ? product.price * kit.colorIds.length : product.compareAtPrice;
+  const compareAt = isKit ? product.price * kit.pairs : product.compareAtPrice;
 
   useEffect(() => {
     if (size && unavailable.includes(size)) setSize(null);
@@ -323,26 +330,27 @@ export function ProductSection() {
     return null;
   };
 
-  const handleAdd = () => {
+  const add = () => {
     const item = requireSelection();
-    if (!item) return;
+    if (!item) return null;
     addToCart(item);
-    setCartOpen(true);
+    metaTrack("AddToCart", {
+      value: itemTotal(item),
+      contentName: item.type === "kit" ? kit.name : product.name,
+    });
+    return item;
+  };
+
+  const handleAdd = () => {
+    if (add()) setCartOpen(true);
   };
 
   const handleBuyNow = () => {
-    const item = requireSelection();
-    if (!item) return;
-    addToCart(item);
-    const result = goToCheckout([item]);
-    if (!result.ok) {
-      showToast(result.message);
-      setCartOpen(true);
-    }
+    if (add()) navigate({ to: "/checkout" });
   };
 
   return (
-    <section id="comprar" className="scroll-mt-20 bg-white py-12 sm:py-20">
+    <section ref={sectionRef} id="comprar" className="scroll-mt-20 bg-white py-12 sm:py-20">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[1.25fr_1fr] lg:gap-16">
         <Gallery />
 
@@ -365,13 +373,21 @@ export function ProductSection() {
               <span className="text-3xl font-extrabold tracking-tight">{formatBRL(price)}</span>
               {isKit && <span className="text-sm font-semibold text-heat">2 pares</span>}
             </div>
-            <p className="mt-1 text-sm text-mute">
-              em até {product.installments}x de{" "}
-              <strong className="text-ink">{formatBRL(installment(price))}</strong> sem juros
-            </p>
-            <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-pix/10 px-3 py-1 text-sm font-semibold text-pix">
-              {formatBRL(pixPrice(price))} no Pix ({Math.round(product.pixDiscount * 100)}% off)
-            </p>
+            {cardEnabled ? (
+              <>
+                <p className="mt-1 text-sm text-mute">
+                  em até {product.installments}x de{" "}
+                  <strong className="text-ink">{formatBRL(installment(price))}</strong> sem juros
+                </p>
+                <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-pix/10 px-3 py-1 text-sm font-semibold text-pix">
+                  {formatBRL(pixPrice(price))} no Pix ({Math.round(product.pixDiscount * 100)}% off)
+                </p>
+              </>
+            ) : (
+              <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-pix/10 px-3 py-1 text-sm font-semibold text-pix">
+                À vista no Pix · frete grátis
+              </p>
+            )}
           </div>
 
           {/* Cor (no kit, as duas cores já estão incluídas) */}
@@ -425,41 +441,63 @@ export function ProductSection() {
                   transition={{ duration: 0.25 }}
                   className="mt-6 space-y-6"
                 >
-                  {kit.colorIds.map((id) => {
-                    const c = colorById(id);
-                    const missing = sizeError && !kitSizes[id];
+                  {kitPairs.map((pair, index) => {
+                    const c = colorById(pair.colorId);
+                    const missing = sizeError && !pair.size;
                     return (
-                      <div key={id}>
-                        <button
-                          onClick={() => setColorId(id)}
-                          className="flex items-center gap-3 text-left"
-                          aria-label={`Ver fotos do par ${c.name}`}
-                        >
-                          <img
-                            src={c.images[0].thumb}
-                            alt=""
-                            className={`h-11 w-11 rounded-xl bg-photo object-cover ${
-                              colorId === id ? "ring-2 ring-ink ring-offset-1" : ""
-                            }`}
-                          />
-                          <span
-                            className={`text-sm font-semibold ${missing ? "text-red-600" : ""}`}
-                          >
-                            {missing
-                              ? `Escolha o tamanho do par ${c.name}`
-                              : `Tamanho do par ${c.name}`}
-                            {kitSizes[id] && (
-                              <span className="font-normal text-mute"> · BR {kitSizes[id]}</span>
-                            )}
+                      <div key={index} className="rounded-2xl border border-stone p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-display text-xl uppercase">Par {index + 1}</span>
+                          <span className="text-xs text-mute">
+                            {c.name}
+                            {pair.size && ` · BR ${pair.size}`}
                           </span>
-                        </button>
-                        <div className="mt-3">
+                        </div>
+                        <p className="mt-3 text-sm font-semibold">Cor</p>
+                        <div className="mt-2 flex gap-2">
+                          {colors.map((opt) => {
+                            const active = pair.colorId === opt.id;
+                            return (
+                              <button
+                                key={opt.id}
+                                onClick={() => {
+                                  // Numeração esgotada na nova cor: limpa para escolher de novo.
+                                  const out = (soldOut[opt.id] ?? []).includes(pair.size ?? "");
+                                  setKitPair(index, {
+                                    colorId: opt.id,
+                                    ...(out ? { size: null } : {}),
+                                  });
+                                  setColorId(opt.id);
+                                }}
+                                aria-pressed={active}
+                                className={`flex items-center gap-2 rounded-xl border-2 py-1.5 pl-1.5 pr-3 text-xs font-semibold transition ${
+                                  active
+                                    ? "border-ink bg-ink text-white"
+                                    : "border-stone hover:border-ink"
+                                }`}
+                              >
+                                <img
+                                  src={opt.images[0].thumb}
+                                  alt=""
+                                  className="h-9 w-9 rounded-lg bg-photo object-cover"
+                                />
+                                {opt.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p
+                          className={`mt-4 text-sm font-semibold ${missing ? "text-red-600" : ""}`}
+                        >
+                          {missing ? `Escolha a numeração do par ${index + 1}` : "Numeração (BR)"}
+                        </p>
+                        <div className="mt-2">
                           <SizeGrid
-                            colorId={id}
-                            value={kitSizes[id] ?? null}
+                            colorId={pair.colorId}
+                            value={pair.size}
                             onChange={(s) => {
-                              setKitSize(id, s);
-                              setColorId(id);
+                              setKitPair(index, { size: s });
+                              setColorId(pair.colorId);
                             }}
                             error={missing}
                           />

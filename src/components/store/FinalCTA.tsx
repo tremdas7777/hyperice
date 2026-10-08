@@ -2,9 +2,11 @@ import { motion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
 import { editorial, kit, product } from "@/data/store";
 import { formatBRL, installment, scrollToId } from "@/lib/format";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { ShineButton, SplitTitle } from "./primitives";
 
 export function FinalCTA() {
+  const { cardEnabled } = useStoreSettings();
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], ["-12%", "12%"]);
@@ -29,9 +31,11 @@ export function FinalCTA() {
           className="font-display text-[clamp(3rem,8vw,7rem)] uppercase leading-[0.9]"
         />
         <p className="mx-auto mt-6 max-w-lg text-lg text-white/70">
-          {product.name} por {formatBRL(product.price)} ou {product.installments}x de{" "}
-          {formatBRL(installment(product.price))} sem juros. Ou leve as duas cores no kit por{" "}
-          {formatBRL(kit.price)}. Frete grátis.
+          {product.name} por {formatBRL(product.price)}
+          {cardEnabled
+            ? ` ou ${product.installments}x de ${formatBRL(installment(product.price))} sem juros`
+            : ""}
+          . Ou leve as duas cores no kit por {formatBRL(kit.price)}. Frete grátis.
         </p>
         <ShineButton onClick={() => scrollToId("comprar")} className="mt-10 px-10 py-5 text-base">
           Garantir o meu

@@ -5,10 +5,11 @@ import { store } from "@/data/store";
 import { useShop } from "@/state/shop";
 
 const links = [
-  { href: "#comprar", label: "Comprar" },
-  { href: "#tecnologia", label: "Tecnologia" },
-  { href: "#como-funciona", label: "Como funciona" },
-  { href: "#faq", label: "Dúvidas" },
+  { href: "/#comprar", label: "Comprar" },
+  { href: "/#tecnologia", label: "Tecnologia" },
+  { href: "/#como-funciona", label: "Como funciona" },
+  { href: "/#faq", label: "Dúvidas" },
+  { href: "/rastreio", label: "Rastrear pedido" },
 ];
 
 export function Header() {
@@ -27,7 +28,7 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         {store.showLogo ? (
           <a
-            href="#"
+            href="/"
             className="font-display text-2xl tracking-wide"
             aria-label={`${store.name} — início`}
           >
