@@ -1,6 +1,6 @@
 import { ArrowDown, Flame, Move3d, Waves, Wind } from "lucide-react";
-import { motion, useInView } from "motion/react";
-import { useRef } from "react";
+import { useInView } from "motion/react";
+import { useRef, type CSSProperties } from "react";
 import { colors, product } from "@/data/store";
 import { scrollToId } from "@/lib/format";
 import { useSelectedColor, useShop } from "@/state/shop";
@@ -12,6 +12,14 @@ const chips = [
   { icon: Waves, label: "3 níveis de massagem", className: "right-[2%] top-[34%]", delay: 1.3 },
   { icon: Wind, label: "Air Zoom total", className: "left-[10%] bottom-[16%]", delay: 1.5 },
 ];
+
+// Atraso e duração das animações de entrada (CSS, ver enter-* em styles.css).
+const enter = (delay: number, dur?: number, y?: number) =>
+  ({
+    "--enter-delay": `${delay}s`,
+    ...(dur ? { "--enter-dur": `${dur}s` } : {}),
+    ...(y ? { "--enter-y": `${y}px` } : {}),
+  }) as CSSProperties;
 
 const particles = Array.from({ length: 14 }, (_, i) => ({
   left: `${8 + ((i * 53) % 84)}%`,
@@ -43,13 +51,9 @@ export function Hero() {
 
       <div className="mx-auto grid min-h-[calc(100svh-6rem)] max-w-7xl items-center gap-6 px-4 pb-12 pt-2 sm:px-6 lg:grid-cols-[1fr_1.15fr] lg:pt-4">
         <div className="relative z-10 max-lg:text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
+          <div className="enter-up" style={enter(0.1, 0.6, 10)}>
             <Eyebrow className="text-white/70">{product.brand} · Lançamento</Eyebrow>
-          </motion.div>
+          </div>
 
           <SplitTitle
             as="h1"
@@ -59,21 +63,17 @@ export function Hero() {
             className="mt-5 font-display text-[clamp(3.2rem,9vw,7.5rem)] uppercase leading-[0.9] tracking-tight"
           />
 
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7, duration: 0.7 }}
-            className="mt-6 max-w-md text-base leading-relaxed text-white/70 max-lg:mx-auto sm:text-lg"
+          <p
+            className="enter-up mt-6 max-w-md text-base leading-relaxed text-white/70 max-lg:mx-auto sm:text-lg"
+            style={enter(0.7, 0.7)}
           >
             Nike Air Zoom Hyperslide: calor, massagem e amortecimento Air Zoom em um só chinelo. Seu
             pós-treino começa nos pés.
-          </motion.p>
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.7 }}
-            className="mt-8 flex flex-wrap gap-3 max-lg:justify-center"
+          <div
+            className="enter-up mt-8 flex flex-wrap gap-3 max-lg:justify-center"
+            style={enter(1, 0.7)}
           >
             <ShineButton onClick={() => scrollToId("comprar")}>Comprar agora</ShineButton>
             <button
@@ -82,15 +82,13 @@ export function Hero() {
             >
               Ver tecnologia
             </button>
-          </motion.div>
+          </div>
         </div>
 
         {/* Chinelo girando 360° */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-          className="relative h-[50svh] min-h-[320px] max-lg:order-first lg:h-[74vh]"
+        <div
+          className="enter-scale relative h-[50svh] min-h-[320px] max-lg:order-first lg:h-[74vh]"
+          style={enter(0.3, 1.2)}
         >
           {/* partículas de calor (atrás do palco) */}
           <div className="pointer-events-none absolute inset-x-0 bottom-[18%] h-10">
@@ -109,25 +107,21 @@ export function Hero() {
             <SpinViewer
               color={color}
               active={inView}
+              priority
               className="absolute inset-0 [mask-image:radial-gradient(circle_closest-side,#000_48%,rgba(0,0,0,0.55)_72%,transparent_96%)]"
               mediaClassName="brightness-[0.94]"
             />
           </div>
 
           {chips.map(({ icon: Icon, label, className, delay }) => (
-            <motion.div
+            <div
               key={label}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: [0, -6, 0] }}
-              transition={{
-                opacity: { delay, duration: 0.6 },
-                y: { delay, duration: 4, repeat: Infinity, ease: "easeInOut" },
-              }}
-              className={`pointer-events-none absolute hidden items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold backdrop-blur-md sm:flex ${className}`}
+              className={`enter-float pointer-events-none absolute hidden items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold backdrop-blur-md sm:flex ${className}`}
+              style={enter(delay)}
             >
               <Icon className="h-3.5 w-3.5 text-heat" />
               {label}
-            </motion.div>
+            </div>
           ))}
 
           <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-3">
@@ -153,7 +147,7 @@ export function Hero() {
               <Move3d className="h-3.5 w-3.5" /> Arraste para girar
             </span>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       <button

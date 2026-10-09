@@ -1,4 +1,4 @@
-import { colors, defaultColor, kit, mindSlide, product } from "@/data/store";
+import { colors, defaultColor, kit, mindImg, mindSlide, product } from "@/data/store";
 
 /** Um par: cor e numeração. */
 export type Pair = { colorId: string; size: string };
@@ -30,7 +30,7 @@ export const itemPairs = (item: CartItem): Pair[] =>
 /** Fotos do item (uma por par) para miniaturas no checkout. */
 export const itemThumbs = (item: CartItem): string[] =>
   item.type === "mind"
-    ? item.pairs.map((p) => mindColorById(p.colorId).image)
+    ? item.pairs.map((p) => mindImg(mindColorById(p.colorId).image, 240))
     : itemPairs(item).map((p) => colorById(p.colorId).images[0].thumb);
 
 export const itemName = (item: CartItem) =>

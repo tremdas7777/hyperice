@@ -90,6 +90,8 @@ function Gallery() {
                 key={current.src}
                 src={current.src}
                 alt={current.alt}
+                loading="lazy"
+                decoding="async"
                 initial={{ opacity: 0, scale: 1.04 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
@@ -133,7 +135,8 @@ function Gallery() {
                 src={img.src}
                 alt={img.alt}
                 className="h-full w-full object-cover"
-                loading={i === 0 ? "eager" : "lazy"}
+                loading="lazy"
+                decoding="async"
               />
             </div>
           ))}
@@ -393,7 +396,12 @@ export function ProductSection() {
                         : "hover:ring-1 hover:ring-ink/30"
                     }`}
                   >
-                    <img src={c.images[0].thumb} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={c.images[0].thumb}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
                   </button>
                 ))}
               </div>
@@ -463,6 +471,7 @@ export function ProductSection() {
                                 <img
                                   src={opt.images[0].thumb}
                                   alt=""
+                                  loading="lazy"
                                   className="h-9 w-9 rounded-lg bg-photo object-cover"
                                 />
                                 {opt.name}

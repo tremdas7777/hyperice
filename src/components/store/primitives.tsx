@@ -1,5 +1,5 @@
 import { motion, type HTMLMotionProps } from "motion/react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -43,12 +43,47 @@ export function SplitTitle({
   delay?: number;
   immediate?: boolean;
 }) {
-  const Tag = motion[as];
   const lines = text.split("\n");
   let index = 0;
-  const animateProps = immediate
-    ? { initial: "hidden", animate: "show" }
-    : { initial: "hidden", whileInView: "show", viewport: { once: true, margin: "-60px" } };
+
+  // No topo da página a animação é em CSS (classe enter-word): roda antes do JavaScript carregar.
+  if (immediate) {
+    const Plain = as;
+    return (
+      <Plain className={className} aria-label={text.replace(/\n/g, " ")}>
+        {lines.map((line, li) => (
+          <span key={li} className="block" aria-hidden>
+            {line.split(" ").map((word, wi) => {
+              const i = index++;
+              return (
+                <span
+                  key={wi}
+                  className="-mt-[0.2em] inline-block overflow-hidden pb-[0.08em] pt-[0.2em] align-bottom"
+                >
+                  <span
+                    className="enter-word inline-block"
+                    style={
+                      { "--enter-delay": `${(delay + i * 0.07).toFixed(2)}s` } as CSSProperties
+                    }
+                  >
+                    {word}
+                    {wi < line.split(" ").length - 1 ? " " : ""}
+                  </span>
+                </span>
+              );
+            })}
+          </span>
+        ))}
+      </Plain>
+    );
+  }
+
+  const Tag = motion[as];
+  const animateProps = {
+    initial: "hidden",
+    whileInView: "show",
+    viewport: { once: true, margin: "-60px" },
+  };
   return (
     <Tag className={className} {...animateProps} aria-label={text.replace(/\n/g, " ")}>
       {lines.map((line, li) => (

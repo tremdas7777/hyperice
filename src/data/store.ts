@@ -95,7 +95,7 @@ export const colors: ColorVariant[] = [
       ],
       "Preto",
     ),
-    spin360: "/videos/hyperslide-preto-360.mp4",
+    spin360: "/videos/hyperslide-preto-360.mp4?v=2",
   },
   {
     id: "orewood",
@@ -114,7 +114,7 @@ export const colors: ColorVariant[] = [
       ],
       "Orewood Brown",
     ),
-    spin360: "/videos/hyperslide-orewood-360.mp4",
+    spin360: "/videos/hyperslide-orewood-360.mp4?v=2",
   },
 ];
 
@@ -164,6 +164,10 @@ export const kit = {
 };
 
 const MIND_IMG = (file: string) => `https://cdn.shopify.com/s/files/1/0828/2846/0285/files/${file}`;
+
+/** Foto do Nike Mind na largura pedida (a CDN da Shopify redimensiona; o original tem 1600 px). */
+export const mindImg = (url: string, width: number) =>
+  `${url}${url.includes("?") ? "&" : "?"}width=${width}`;
 
 // Oferta do popup ao clicar em comprar: Nike Mind 001 Slide por um preço especial.
 // O preço é aplicado no servidor; "de" = preço normal de varejo do modelo (por par).

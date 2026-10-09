@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion, useInView } from "motion/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { banners } from "@/data/store";
 import { scrollToId } from "@/lib/format";
 
@@ -11,6 +11,9 @@ export function BannerCarousel() {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [paused, setPaused] = useState(false);
+  // Fora da tela o carrossel fica parado (não troca slide nem baixa foto à toa).
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { margin: "200px" });
 
   const go = useCallback((next: number) => {
     setDirection(next > 0 ? 1 : -1);
@@ -18,16 +21,24 @@ export function BannerCarousel() {
   }, []);
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || !inView) return;
     const t = setTimeout(() => go(1), DURATION);
     return () => clearTimeout(t);
-  }, [index, paused, go]);
+  }, [index, paused, inView, go]);
+
+  // Deixa a foto do próximo slide pronta antes da troca.
+  useEffect(() => {
+    if (!inView) return;
+    const next = banners[(index + 1) % banners.length];
+    if (next) new Image().src = next.image;
+  }, [index, inView]);
 
   const slide = banners[index];
   if (!slide) return null;
 
   return (
     <section
+      ref={ref}
       className="relative h-[78svh] min-h-[520px] overflow-hidden bg-ink"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -59,6 +70,8 @@ export function BannerCarousel() {
             src={slide.image}
             alt=""
             draggable={false}
+            loading="lazy"
+            decoding="async"
             className="absolute inset-0 h-full w-full animate-kenburns object-cover"
           />
           <div

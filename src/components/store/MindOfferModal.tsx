@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Check, Lock, RefreshCcw, Truck, X } from "lucide-react";
 import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect, useState } from "react";
-import { mindSlide } from "@/data/store";
+import { mindImg, mindSlide } from "@/data/store";
 import { cartTotal, mindColorById, mindOfferPrice } from "@/lib/cart";
 import { formatBRL } from "@/lib/format";
 import { metaTrack } from "@/lib/meta-pixel";
@@ -11,6 +11,9 @@ import { useShop } from "@/state/shop";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const MAX_PAIRS = Math.max(...mindSlide.offers.map((o) => o.pairs));
+// Larguras das fotos (px reais, já contando telas de alta densidade).
+const MAIN_W = 900;
+const THUMB_W = 240;
 
 type PairChoice = { colorId: string; size: string | null };
 
@@ -45,6 +48,28 @@ export function MindOfferModal() {
   useEffect(() => {
     setMobile(!window.matchMedia("(min-width: 768px)").matches);
   }, [mindOfferOpen]);
+
+  // Depois que a página carrega, deixa as fotos do popup prontas: ele abre já com as imagens.
+  useEffect(() => {
+    const warm = () => {
+      new Image().src = mindImg(mindSlide.colors[0]!.image, MAIN_W);
+      for (const c of mindSlide.colors) new Image().src = mindImg(c.image, THUMB_W);
+    };
+    const later = () => window.setTimeout(warm, 1500);
+    if (document.readyState === "complete") {
+      const t = later();
+      return () => window.clearTimeout(t);
+    }
+    let t: number | undefined;
+    const onLoad = () => {
+      t = later();
+    };
+    window.addEventListener("load", onLoad, { once: true });
+    return () => {
+      window.removeEventListener("load", onLoad);
+      window.clearTimeout(t);
+    };
+  }, []);
 
   useEffect(() => {
     if (!mindOfferOpen) return;
@@ -141,7 +166,7 @@ export function MindOfferModal() {
               <AnimatePresence mode="wait">
                 <motion.img
                   key={color.id}
-                  src={color.image}
+                  src={mindImg(color.image, MAIN_W)}
                   alt={`${mindSlide.name} ${color.name}`}
                   initial={{ opacity: 0, x: 24, rotate: -4 }}
                   animate={{ opacity: 1, x: 0, rotate: 0 }}
@@ -238,7 +263,7 @@ export function MindOfferModal() {
                           }`}
                         >
                           <img
-                            src={mindColorById(p.colorId).image}
+                            src={mindImg(mindColorById(p.colorId).image, THUMB_W)}
                             alt=""
                             className="h-9 w-9 shrink-0 scale-125 rounded-lg bg-white object-contain"
                           />
@@ -284,7 +309,7 @@ export function MindOfferModal() {
                           }`}
                         >
                           <img
-                            src={c.image}
+                            src={mindImg(c.image, THUMB_W)}
                             alt=""
                             loading="lazy"
                             className="h-full w-full scale-150 object-contain"

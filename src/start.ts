@@ -1,7 +1,6 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
-import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -23,6 +22,34 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 // from cross-site requests.
 const csrfMiddleware = createCsrfMiddleware({
   filter: (ctx) => ctx.handlerType === "serverFn",
+});
+
+// Pode existir sessão do Supabase neste navegador? (chave sb-<projeto>-auth-token no localStorage,
+// ou o preview do Lovable, que guarda a sessão no editor.) Clientes da loja nunca fazem login.
+function mayHaveSupabaseSession(): boolean {
+  try {
+    if (window.parent !== window) return true;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith("sb-") && k.endsWith("-auth-token")) return true;
+    }
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+// Faz o mesmo que o attachSupabaseAuth gerado pelo Lovable (src/integrations/supabase/auth-attacher.ts):
+// manda o token do Supabase, se houver, nas chamadas ao servidor. A diferença é que o cliente do
+// Supabase (~200 KB) só é baixado quando pode existir uma sessão, e não junto com a página.
+const attachSupabaseAuth = createMiddleware({ type: "function" }).client(async ({ next }) => {
+  if (!mayHaveSupabaseSession()) return next();
+  const { supabase } = await import("@/integrations/supabase/client");
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return next({
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
 });
 
 export const startInstance = createStart(() => ({

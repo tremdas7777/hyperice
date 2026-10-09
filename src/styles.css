@@ -4,6 +4,29 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Fontes servidas pelo próprio site (subconjunto latin do Google Fonts, cobre o português).
+   Sem a ida ao Google, o texto aparece antes. Pré-carregadas em src/routes/__root.tsx. */
+@font-face {
+  font-family: "Anton";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/anton-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 /*
  * Design system definition.
  *
@@ -277,6 +300,73 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Entrada do topo da home em CSS: começa assim que a página aparece, sem esperar o JavaScript
+   (antes o título, o texto e o chinelo ficavam invisíveis até o JS carregar).
+   Ajuste por elemento com --enter-delay, --enter-dur e --enter-y. */
+@keyframes enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(var(--enter-y, 16px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes enter-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes enter-word {
+  from {
+    transform: translateY(110%) rotate(4deg);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes enter-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@utility enter-up {
+  animation: enter-up var(--enter-dur, 0.7s) cubic-bezier(0.22, 1, 0.36, 1) var(--enter-delay, 0s)
+    both;
+}
+@utility enter-scale {
+  animation: enter-scale var(--enter-dur, 1.2s) cubic-bezier(0.22, 1, 0.36, 1)
+    var(--enter-delay, 0s) both;
+}
+@utility enter-word {
+  animation: enter-word var(--enter-dur, 0.9s) cubic-bezier(0.22, 1, 0.36, 1) var(--enter-delay, 0s)
+    both;
+}
+@utility enter-float {
+  animation:
+    enter-fade 0.6s ease-out var(--enter-delay, 0s) both,
+    float-y 4s ease-in-out var(--enter-delay, 0s) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

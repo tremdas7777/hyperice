@@ -12,7 +12,6 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { Toaster } from "@/components/ui/sonner";
 import { MindOfferModal } from "@/components/store/MindOfferModal";
 import { WhatsAppFloat } from "@/components/store/WhatsAppFloat";
 import { useAntiCopy } from "@/hooks/useAntiCopy";
@@ -152,13 +151,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "preconnect", href: "https://static.nike.com" },
+      // Fontes do próprio site (@font-face em styles.css): baixam junto com o CSS, sem esperar o Google.
       {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap",
+        rel: "preload",
+        href: "/fonts/inter-latin.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
       },
+      {
+        rel: "preload",
+        href: "/fonts/anton-latin.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      { rel: "preconnect", href: "https://static.nike.com" },
     ],
     scripts: pixelScripts(loaderData),
   }),
@@ -208,7 +216,6 @@ function RootComponent() {
         <MindOfferModal />
       </ShopProvider>
       <WhatsAppFloat />
-      <Toaster position="top-center" />
     </QueryClientProvider>
   );
 }
