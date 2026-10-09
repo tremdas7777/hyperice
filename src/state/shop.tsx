@@ -33,6 +33,8 @@ type ShopState = {
   startPurchase: (item: CartItem) => void;
   /** Acrescenta um item ao pedido em andamento (ex.: 2ª unidade no checkout). */
   addItem: (item: CartItem) => void;
+  /** Troca o(s) par(es) do Hyperslide pelo kit de 2 pares (preço fechado do kit). */
+  upgradeToKit: (pairs: Pair[]) => void;
   /** Coloca (ou troca) a oferta do Nike Mind no pedido. */
   setMindItem: (item: CartItem) => void;
   clearCart: () => void;
@@ -97,6 +99,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback((item: CartItem) => setCart((prev) => [...prev, item]), []);
 
+  // 2ª unidade no checkout: o par avulso vira kit (os 2 pares pelo preço fechado do kit).
+  const upgradeToKit = useCallback((pairs: Pair[]) => {
+    setCart((prev) => [...prev.filter((i) => i.type === "mind"), { type: "kit", pairs, qty: 1 }]);
+  }, []);
+
   const setMindItem = useCallback((item: CartItem) => {
     // Uma oferta por pedido: troca a escolha anterior, se houver.
     setCart((prev) => [...prev.filter((i) => i.type !== "mind"), item]);
@@ -118,6 +125,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       cartLoaded,
       startPurchase,
       addItem,
+      upgradeToKit,
       setMindItem,
       clearCart,
       mindOfferOpen,
@@ -135,6 +143,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       cartLoaded,
       startPurchase,
       addItem,
+      upgradeToKit,
       setMindItem,
       clearCart,
       mindOfferOpen,
