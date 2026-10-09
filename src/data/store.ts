@@ -21,7 +21,6 @@ export const store = {
   // `card: true` = só aparece quando o cartão estiver ativo no /admin.
   announcements: [
     { text: "Kit 2 pares por R$ 197" },
-    { text: FREE_SHIPPING_TEXT },
     { text: "12x sem juros no cartão", card: true },
     { text: "5% de desconto no Pix", card: true },
     { text: "Troca fácil em até 7 dias" },
