@@ -20,7 +20,7 @@ export const store = {
   city: "São Paulo, SP — Brasil",
   // `card: true` = só aparece quando o cartão estiver ativo no /admin.
   announcements: [
-    { text: "Kit 2 pares por R$ 267" },
+    { text: "Kit 2 pares por R$ 197" },
     { text: FREE_SHIPPING_TEXT },
     { text: "12x sem juros no cartão", card: true },
     { text: "5% de desconto no Pix", card: true },
@@ -131,7 +131,7 @@ export const product = {
   brand: "Nike x Hyperice",
   name: "Nike Air Zoom Hyperslide",
   short: "Hyperslide",
-  price: 197,
+  price: 127,
   compareAtPrice: null as number | null, // ex.: 2199.9 para mostrar "de/por"
   // Parcelas no cartão e desconto do Pix valem quando o cartão está ativo no /admin.
   installments: 12,
@@ -160,7 +160,7 @@ export const kit = {
   name: "Kit 2 pares",
   short: "Kit 2 pares",
   pairs: 2,
-  price: 267,
+  price: 197,
 };
 
 const MIND_IMG = (file: string) => `https://cdn.shopify.com/s/files/1/0828/2846/0285/files/${file}`;
