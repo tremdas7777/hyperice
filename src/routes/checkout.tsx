@@ -43,7 +43,7 @@ export const Route = createFileRoute("/checkout")({
       { title: `Checkout seguro | ${product.name}` },
       {
         name: "description",
-        content: `Finalize sua compra do ${product.name} com segurança. Pagamento via Pix e frete grátis acima de R$ 197.`,
+        content: `Finalize sua compra do ${product.name} com segurança. Pagamento via Pix e frete grátis acima de R$ 180.`,
       },
       { name: "robots", content: "noindex" },
     ],

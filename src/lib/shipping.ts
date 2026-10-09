@@ -9,9 +9,8 @@ export type FreteId = (typeof FRETES)[number]["id"];
 
 export const getFrete = (id: FreteId) => FRETES.find((f) => f.id === id) ?? FRETES[0];
 
-/** Valor mínimo (produtos, sem frete) para liberar o frete grátis. 0 = grátis em qualquer pedido.
- *  Igual ao preço do kit de 2 pares: quem leva 2 pares sempre tem frete grátis. */
-export const FREE_SHIPPING_MIN = 197;
+/** Valor mínimo (produtos, sem frete) para liberar o frete grátis. 0 = grátis em qualquer pedido. */
+export const FREE_SHIPPING_MIN = 180;
 
 export const isFreeShippingEligible = (subtotal: number) => subtotal >= FREE_SHIPPING_MIN;
 
