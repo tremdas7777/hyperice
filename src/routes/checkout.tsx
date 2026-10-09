@@ -35,6 +35,7 @@ import {
   Radio,
 } from "@/components/checkout/parts";
 import { SummaryDesktop, SummaryMobile } from "@/components/checkout/Summary";
+import { FreeShippingUpsell } from "@/components/checkout/FreeShippingUpsell";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -820,6 +821,7 @@ function Checkout() {
       <SummaryMobile lines={lines} products={products} frete={freteValue} discount={discount} />
       <main className="mx-auto grid w-full max-w-[1160px] gap-4 px-3 pb-24 pt-6 md:px-4 lg:grid-cols-3">
         <div className="space-y-4">
+          <FreeShippingUpsell products={products} />
           {idCard}
           {addrCard}
         </div>
