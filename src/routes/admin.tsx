@@ -7,6 +7,7 @@ import { getSiteSettings, setWhatsappEnabled } from "@/lib/site-settings.functio
 import { UtmifyCard } from "@/components/admin/UtmifyCard";
 import { HypercashCard } from "@/components/admin/HypercashCard";
 import { PixgateCard } from "@/components/admin/PixgateCard";
+import { PixGatewayCard } from "@/components/admin/PixGatewayCard";
 import { MetaPixelCard } from "@/components/admin/MetaPixelCard";
 import { TrackingPixelsCard } from "@/components/admin/TrackingPixelsCard";
 import { OrdersTab } from "@/components/admin/OrdersTab";
@@ -289,6 +290,7 @@ function AdminPage() {
                   </Button>
                 </div>
               </Card>
+              <PixGatewayCard password={password} />
               <PixgateCard password={password} />
               <HypercashCard password={password} />
               <UtmifyCard password={password} />

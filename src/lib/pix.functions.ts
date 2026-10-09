@@ -14,18 +14,12 @@ import {
 } from "@/lib/pix-orders.server";
 import { createCardTransaction, CARD_ORDER_PREFIX, getHypercashKeys } from "@/lib/hypercash.server";
 import { isPaidStatus } from "@/lib/pix-status";
-import { getPixgateKey, PIXGATE_API } from "@/lib/pixgate.server";
+import { createPix } from "@/lib/pix-gateway.server";
 import { isSock, SOCK_SIZES, UPSELL_PRODUCTS, upsellSelection } from "@/lib/upsell";
 import { checkoutTotals, CARD_MAX_INSTALLMENTS } from "@/lib/payment-pricing";
 import { FREE_SHIPPING_MIN, getFrete, isFreeShippingEligible } from "@/lib/shipping";
 
 const utmSchema = z.record(z.string(), z.string().max(300).nullable()).optional().default({});
-
-async function apiKey(): Promise<string> {
-  const key = await getPixgateKey();
-  if (!key) throw new Error("Pagamento indisponível no momento.");
-  return key;
-}
 
 function isValidCpf(raw: string): boolean {
   const c = raw.replace(/\D/g, "");
@@ -87,41 +81,6 @@ function assertShipping(d: CustomerInput, products: number) {
 
 export type PixCharge = { id: string; qrcode: string; amount: number; status: string };
 
-/** Gera a cobrança Pix na PixGate. Valor em centavos. */
-async function gatewayCashin(o: { name: string; cpf: string; amount: number; origin: string }) {
-  // PixGate recebe o valor em reais (decimal); internamente seguimos em centavos.
-  const valor = Number((o.amount / 100).toFixed(2));
-  const res = await fetch(`${PIXGATE_API}/v1/cashin`, {
-    method: "POST",
-    headers: {
-      Apikey: await apiKey(),
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      nome: o.name,
-      cpf: o.cpf,
-      valor,
-      // Nome genérico enviado ao gateway — sem detalhes do produto real.
-      descricao: store.gatewayName,
-      postback: `${new URL(o.origin).origin}/api/public/pix-webhook`,
-    }),
-  });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- resposta do gateway/banco sem tipo
-  const json = (await res.json().catch(() => null)) as any;
-  const txId = json?.id;
-  const qrcode = json?.pix;
-  if (!res.ok || !txId || !qrcode) {
-    console.error("PixGate error", res.status, JSON.stringify(json)?.slice(0, 500));
-    throw new Error("Não foi possível gerar o Pix. Confira seus dados e tente novamente.");
-  }
-  return {
-    id: String(txId),
-    qrcode: String(qrcode),
-    status: String(json?.status ?? "pending").toLowerCase(),
-  };
-}
-
 function requestMeta() {
   const h = getRequest()?.headers;
   return {
@@ -145,13 +104,17 @@ export const createPixCharge = createServerFn({ method: "POST" })
       pixDiscount: await isCardEnabled().catch(() => false),
     });
     const amount = totals.total;
-    const charge = await gatewayCashin({
-      name: data.name,
-      cpf: data.cpf,
-      amount,
-      origin: data.origin,
-    });
     const { ip, ua } = requestMeta();
+    // Gateway escolhido no /admin (Umbrella ou PixGate).
+    const charge = await createPix({
+      amount,
+      customer: { name: data.name, email: data.email, phone: data.phone, cpf: data.cpf },
+      address: data.address,
+      // Nome genérico enviado ao gateway — sem detalhes do produto real.
+      description: store.gatewayName,
+      origin: data.origin,
+      ip,
+    });
     // Guarda o pedido no servidor para reportar a aprovação mesmo sem o cliente na página.
     const orderData = {
       createdAt: Date.now(),
@@ -472,8 +435,15 @@ export const createUpsellCharge = createServerFn({ method: "POST" })
     const sel = chosenOffers(data);
     const amount = Math.round(sel.total * 100);
     const c = parent.customer;
-    const charge = await gatewayCashin({ name: c.name, cpf: c.cpf, amount, origin: data.origin });
     const { ip, ua } = requestMeta();
+    const charge = await createPix({
+      amount,
+      customer: { name: c.name, email: c.email, phone: c.phone, cpf: c.cpf },
+      address: c.address,
+      description: store.gatewayName,
+      origin: data.origin,
+      ip,
+    });
     const orderData = {
       createdAt: Date.now(),
       id: charge.id,
