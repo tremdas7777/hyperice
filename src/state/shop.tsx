@@ -31,6 +31,8 @@ type ShopState = {
   cartLoaded: boolean;
   /** Começa a compra com o item escolhido (substitui o pedido anterior). */
   startPurchase: (item: CartItem) => void;
+  /** Acrescenta um item ao pedido em andamento (ex.: 2ª unidade no checkout). */
+  addItem: (item: CartItem) => void;
   /** Coloca (ou troca) a oferta do Nike Mind no pedido. */
   setMindItem: (item: CartItem) => void;
   clearCart: () => void;
@@ -92,6 +94,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const startPurchase = useCallback((item: CartItem) => setCart([item]), []);
+
+  const addItem = useCallback((item: CartItem) => setCart((prev) => [...prev, item]), []);
 
   const setMindItem = useCallback((item: CartItem) => {
     // Uma oferta por pedido: troca a escolha anterior, se houver.
