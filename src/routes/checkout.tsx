@@ -565,6 +565,7 @@ function Checkout() {
             onChange={(e) => setAddr({ ...addr, complemento: e.target.value })}
           />
           <p className="pt-2 text-sm font-bold">Escolha o frete</p>
+          <FreeShippingUpsell products={products} />
           {FRETES.map(({ id: v, name: t, eta: d, price }) => {
             const locked = v === "gratis" && !freeEligible;
             const p = locked ? `Acima de ${brl(FREE_SHIPPING_MIN)}` : price ? brl(price) : "Grátis";
@@ -593,7 +594,6 @@ function Checkout() {
               </button>
             );
           })}
-          <FreeShippingUpsell products={products} />
           <PrimaryButton type="submit" disabled={!addrValid}>
             Ir para pagamento
           </PrimaryButton>
