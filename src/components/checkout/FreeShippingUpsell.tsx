@@ -9,7 +9,7 @@ import { brl } from "./parts";
 
 /**
  * Oferta no checkout: se o pedido ainda não alcança o frete grátis, sugere fechar
- * o kit de 2 pares — o cliente paga só o que falta para chegar em R$ 267 (o preço
+ * o kit de 2 pares — o cliente paga só o que falta para chegar em R$ 197 (o preço
  * dos 2 pares). A 2ª unidade vem na mesma numeração do 1º par; a cor é escolhida aqui.
  * Some assim que o pedido alcança o valor mínimo.
  */

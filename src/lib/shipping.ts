@@ -11,10 +11,10 @@ export const getFrete = (id: FreteId) => FRETES.find((f) => f.id === id) ?? FRET
 
 /** Valor mínimo (produtos, sem frete) para liberar o frete grátis. 0 = grátis em qualquer pedido.
  *  Igual ao preço do kit de 2 pares: quem leva 2 pares sempre tem frete grátis. */
-export const FREE_SHIPPING_MIN = 267;
+export const FREE_SHIPPING_MIN = 197;
 
 export const isFreeShippingEligible = (subtotal: number) => subtotal >= FREE_SHIPPING_MIN;
 
-/** Chamada curta para a loja, ex.: "Frete grátis acima de R$ 267". */
+/** Chamada curta para a loja, ex.: "Frete grátis acima de R$ 197". */
 export const FREE_SHIPPING_TEXT =
   FREE_SHIPPING_MIN > 0 ? `Frete grátis acima de R$ ${FREE_SHIPPING_MIN}` : "Frete grátis";
