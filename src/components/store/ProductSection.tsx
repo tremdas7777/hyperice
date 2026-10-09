@@ -19,7 +19,7 @@ import { useTrackProductView } from "@/hooks/useTrackProductView";
 import { metaTrack } from "@/lib/meta-pixel";
 import { itemTotal } from "@/lib/cart";
 import { formatBRL, installment, pixPrice } from "@/lib/format";
-import { FREE_SHIPPING_MIN, FREE_SHIPPING_TEXT, isFreeShippingEligible } from "@/lib/shipping";
+import { isFreeShippingEligible } from "@/lib/shipping";
 import { useCurrentSelection, useSelectedColor, useShop } from "@/state/shop";
 import { SizeGuideModal } from "./SizeGuideModal";
 import { Eyebrow, ShineButton } from "./primitives";
