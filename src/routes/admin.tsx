@@ -6,6 +6,7 @@ import { getAdminFunnel, verifyAdminPassword } from "@/lib/admin.functions";
 import { getSiteSettings, setWhatsappEnabled } from "@/lib/site-settings.functions";
 import { UtmifyCard } from "@/components/admin/UtmifyCard";
 import { HypercashCard } from "@/components/admin/HypercashCard";
+import { PixgateCard } from "@/components/admin/PixgateCard";
 import { MetaPixelCard } from "@/components/admin/MetaPixelCard";
 import { TrackingPixelsCard } from "@/components/admin/TrackingPixelsCard";
 import { OrdersTab } from "@/components/admin/OrdersTab";
@@ -288,6 +289,7 @@ function AdminPage() {
                   </Button>
                 </div>
               </Card>
+              <PixgateCard password={password} />
               <HypercashCard password={password} />
               <UtmifyCard password={password} />
               <MetaPixelCard password={password} />

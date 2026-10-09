@@ -7,10 +7,9 @@ import { product } from "@/data/store";
 import type { CartItem } from "@/lib/cart";
 import { orderSummary } from "@/lib/order";
 import { isPaidStatus } from "@/lib/pix-status";
+import { getPixgateKey, PIXGATE_API } from "@/lib/pixgate.server";
 import type { UpsellProduct } from "@/lib/upsell";
 import { getCardTransaction, isCardOrderId, CARD_ORDER_PREFIX } from "@/lib/hypercash.server";
-
-const API = "https://app.pixgateip.com/api";
 
 export type StoredCustomer = {
   name: string;
@@ -173,9 +172,9 @@ export async function fetchGatewayStatus(id: string): Promise<{ status: string; 
     // HyperCash já devolve o valor em centavos.
     return { status: tx?.status ?? "processing", amount: tx?.amount ?? 0 };
   }
-  const key = process.env["PIXGATE_API_KEY"];
+  const key = await getPixgateKey();
   if (!key) throw new Error("Pagamento indisponível no momento.");
-  const res = await fetch(`${API}/stats/${encodeURIComponent(id)}`, {
+  const res = await fetch(`${PIXGATE_API}/stats/${encodeURIComponent(id)}`, {
     headers: { Apikey: key, Accept: "application/json" },
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- resposta do gateway/banco sem tipo

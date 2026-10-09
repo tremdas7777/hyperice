@@ -14,16 +14,15 @@ import {
 } from "@/lib/pix-orders.server";
 import { createCardTransaction, CARD_ORDER_PREFIX, getHypercashKeys } from "@/lib/hypercash.server";
 import { isPaidStatus } from "@/lib/pix-status";
+import { getPixgateKey, PIXGATE_API } from "@/lib/pixgate.server";
 import { isSock, SOCK_SIZES, UPSELL_PRODUCTS, upsellSelection } from "@/lib/upsell";
 import { checkoutTotals, CARD_MAX_INSTALLMENTS } from "@/lib/payment-pricing";
 import { FREE_SHIPPING_MIN, getFrete, isFreeShippingEligible } from "@/lib/shipping";
 
 const utmSchema = z.record(z.string(), z.string().max(300).nullable()).optional().default({});
 
-const API = "https://app.pixgateip.com/api";
-
-function apiKey(): string {
-  const key = process.env["PIXGATE_API_KEY"];
+async function apiKey(): Promise<string> {
+  const key = await getPixgateKey();
   if (!key) throw new Error("Pagamento indisponível no momento.");
   return key;
 }
@@ -92,9 +91,13 @@ export type PixCharge = { id: string; qrcode: string; amount: number; status: st
 async function gatewayCashin(o: { name: string; cpf: string; amount: number; origin: string }) {
   // PixGate recebe o valor em reais (decimal); internamente seguimos em centavos.
   const valor = Number((o.amount / 100).toFixed(2));
-  const res = await fetch(`${API}/v1/cashin`, {
+  const res = await fetch(`${PIXGATE_API}/v1/cashin`, {
     method: "POST",
-    headers: { Apikey: apiKey(), "Content-Type": "application/json", Accept: "application/json" },
+    headers: {
+      Apikey: await apiKey(),
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
     body: JSON.stringify({
       nome: o.name,
       cpf: o.cpf,
