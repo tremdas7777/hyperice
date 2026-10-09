@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Truck } from "lucide-react";
-import { colors, defaultColor, product } from "@/data/store";
+import { colors, defaultColor, kit, product } from "@/data/store";
 import { itemPairs } from "@/lib/cart";
 import { FREE_SHIPPING_MIN } from "@/lib/shipping";
 import { cn } from "@/lib/utils";
@@ -8,23 +8,27 @@ import { useShop } from "@/state/shop";
 import { brl } from "./parts";
 
 /**
- * Oferta no checkout: se o pedido ainda não alcança o frete grátis, sugere uma
- * 2ª unidade do Hyperslide (mesma numeração do 1º par; o cliente escolhe a cor).
+ * Oferta no checkout: se o pedido ainda não alcança o frete grátis, sugere fechar
+ * o kit de 2 pares — o cliente paga só o que falta para chegar em R$ 267 (o preço
+ * dos 2 pares). A 2ª unidade vem na mesma numeração do 1º par; a cor é escolhida aqui.
  * Some assim que o pedido alcança o valor mínimo.
  */
 export function FreeShippingUpsell({ products }: { products: number }) {
-  const { cart, addItem, showToast } = useShop();
+  const { cart, upgradeToKit, showToast } = useShop();
   const [colorId, setColorId] = useState(defaultColor.id);
   const [added, setAdded] = useState(false);
 
   const missing = FREE_SHIPPING_MIN - products;
-  const size = cart.flatMap(itemPairs)[0]?.size;
-  if (missing <= 0 || !size || added) return null;
+  const first = cart.flatMap(itemPairs)[0];
+  if (missing <= 0 || !first || added) return null;
 
   const add = () => {
-    addItem({ type: "single", colorId, size, qty: 1 });
+    upgradeToKit([
+      { colorId: first.colorId, size: first.size },
+      { colorId, size: first.size },
+    ]);
     setAdded(true);
-    showToast("2ª unidade adicionada — frete grátis liberado!");
+    showToast("2º par adicionado — frete grátis liberado!");
   };
 
   return (
@@ -33,8 +37,8 @@ export function FreeShippingUpsell({ products }: { products: number }) {
         <Truck className="h-4 w-4 shrink-0" /> Falta pouco para o frete grátis
       </p>
       <p className="mt-2 text-[13px] text-ink/80">
-        Faltam <b>{brl(missing)}</b> em produtos. Leve <b>mais 1 {product.short}</b> (mesma
-        numeração, BR {size}) e o <b>frete sai grátis</b>:
+        Faltam <b>{brl(missing)}</b>. Leve <b>mais 1 {product.short}</b> (mesma numeração, BR{" "}
+        {first.size}) e os <b>2 pares saem por {brl(kit.price)}</b> com <b>frete grátis</b>:
       </p>
       <div className="mt-3 flex items-center gap-2">
         <span className="text-[12px] font-semibold text-mute">Cor:</span>
@@ -61,7 +65,7 @@ export function FreeShippingUpsell({ products }: { products: number }) {
         onClick={add}
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-pix px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-white transition hover:opacity-90"
       >
-        Adicionar por {brl(product.price)} e ganhar frete grátis
+        Adicionar por {brl(missing)} e ganhar frete grátis
       </button>
     </section>
   );
