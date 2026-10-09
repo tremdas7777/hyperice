@@ -369,10 +369,7 @@ export function ProductSection() {
               </>
             ) : (
               <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-pix/10 px-3 py-1 text-sm font-semibold text-pix">
-                À vista no Pix ·{" "}
-                {isFreeShippingEligible(price)
-                  ? "frete grátis"
-                  : `frete grátis acima de R$ ${FREE_SHIPPING_MIN}`}
+                À vista no Pix{isFreeShippingEligible(price) ? " · frete grátis" : ""}
               </p>
             )}
           </div>
@@ -556,7 +553,7 @@ export function ProductSection() {
 
           <ul className="mt-8 grid grid-cols-2 gap-3 text-sm">
             {[
-              { icon: Truck, text: FREE_SHIPPING_TEXT },
+              { icon: Truck, text: "Envio para todo o Brasil" },
               { icon: Zap, text: "Envio em até 2 dias úteis" },
               { icon: ShieldCheck, text: "Pagamento 100% seguro" },
               { icon: RefreshCcw, text: "Troca fácil em 7 dias" },
