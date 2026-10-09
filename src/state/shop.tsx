@@ -117,6 +117,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       cart,
       cartLoaded,
       startPurchase,
+      addItem,
       setMindItem,
       clearCart,
       mindOfferOpen,
