@@ -59,3 +59,26 @@ export async function deletePixgateKey(): Promise<void> {
   if (error) throw new Error(error.message);
   cache = null;
 }
+
+/**
+ * Testa a chave sem criar cobrança: consulta um Pix inexistente.
+ * 401/403 ("Client id inválido") = chave recusada; qualquer outra resposta = chave aceita.
+ */
+export async function testPixgateKey(): Promise<{
+  ok: boolean;
+  status?: number | undefined;
+  error?: string | undefined;
+}> {
+  const key = await getPixgateKey();
+  if (!key) return { ok: false, error: "Nenhuma chave cadastrada" };
+  try {
+    const res = await fetch(`${PIXGATE_API}/stats/00000000-0000-0000-0000-000000000000`, {
+      headers: { Apikey: key, Accept: "application/json" },
+    });
+    if (res.status === 401 || res.status === 403)
+      return { ok: false, status: res.status, error: "Chave recusada pela PixGate" };
+    return { ok: res.status < 500, status: res.status };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Falha de conexão" };
+  }
+}

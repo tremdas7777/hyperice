@@ -1,4 +1,4 @@
-// Gateway do Pix escolhido no /admin: Umbrella (padrão) ou PixGate. Somente servidor.
+// Gateway do Pix escolhido no /admin: PixGate (padrão) ou Umbrella. Somente servidor.
 // A escolha vale para os próximos Pix. Cada pedido guarda no id qual gateway gerou o Pix, então a
 // consulta de status e o webhook continuam no gateway certo mesmo depois de uma troca.
 import { getPixgateKey, PIXGATE_API } from "@/lib/pixgate.server";
@@ -21,7 +21,7 @@ export const UMBRELLA_ORDER_PREFIX = "um_";
 export const isUmbrellaOrderId = (id: string) => id.startsWith(UMBRELLA_ORDER_PREFIX);
 
 const SETTING = "pix_gateway";
-const DEFAULT_GATEWAY: PixGateway = "umbrella";
+const DEFAULT_GATEWAY: PixGateway = "pixgate";
 
 async function db() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -52,7 +52,7 @@ async function configured(): Promise<Record<PixGateway, boolean>> {
 }
 
 /**
- * Gateway que gera os próximos Pix: o escolhido no /admin (padrão: Umbrella). Se o escolhido estiver
+ * Gateway que gera os próximos Pix: o escolhido no /admin (padrão: PixGate). Se o escolhido estiver
  * sem chave e o outro tiver, usa o outro para o checkout não parar.
  */
 export async function getPixGatewayState(): Promise<{
@@ -62,7 +62,7 @@ export async function getPixGatewayState(): Promise<{
 }> {
   const [choice, keys] = await Promise.all([savedChoice(), configured()]);
   const selected = choice ?? DEFAULT_GATEWAY;
-  const other: PixGateway = selected === "umbrella" ? "pixgate" : "umbrella";
+  const other: PixGateway = selected === "pixgate" ? "umbrella" : "pixgate";
   const active = !keys[selected] && keys[other] ? other : selected;
   return { selected, active, configured: keys };
 }

@@ -71,6 +71,10 @@ beforeEach(async () => {
         return json({ id: "pg-1", pix: "00020126PIXGATE", status: "pending" });
       }
       if (url.startsWith("https://app.pixgateip.com/api/stats/")) {
+        const key = (init?.headers as Record<string, string>)["Apikey"];
+        if (key === "pg-invalida-123456") return json({ message: "Client id inválido." }, 403);
+        if (url.endsWith("/00000000-0000-0000-0000-000000000000"))
+          return json({ message: "Não encontrado" }, 404);
         return json({ status: "paid", value: 99.9 });
       }
       throw new Error(`fetch inesperado: ${url}`);
@@ -97,11 +101,30 @@ const pixInput = {
 const load = () => import("@/lib/pix-gateway.server");
 
 describe("gateway do Pix", () => {
-  it("usa a Umbrella por padrão quando ela tem chave", async () => {
+  it("usa a PixGate por padrão", async () => {
     settings.set("umbrella_api_key", "umb-key-1234567890");
     settings.set("pixgate_api_key", "pg-key-1234567890");
     const { createPix, getPixGatewayState } = await load();
-    expect((await getPixGatewayState()).active).toBe("umbrella");
+    expect(await getPixGatewayState()).toMatchObject({ selected: "pixgate", active: "pixgate" });
+    expect(await createPix(pixInput)).toEqual({
+      id: "pg-1",
+      qrcode: "00020126PIXGATE",
+      status: "pending",
+    });
+    const body = JSON.parse(String(calls[0]!.init!.body));
+    expect(body).toMatchObject({
+      nome: "Maria Silva",
+      cpf: "52998224725",
+      valor: 99.9,
+      postback: "https://loja.com/api/public/pix-webhook",
+    });
+  });
+
+  it("Umbrella escolhida: gera o Pix com a chave e os campos da Umbrella", async () => {
+    settings.set("umbrella_api_key", "umb-key-1234567890");
+    settings.set("pixgate_api_key", "pg-key-1234567890");
+    const { createPix, savePixGateway } = await load();
+    await savePixGateway("umbrella");
 
     const charge = await createPix(pixInput);
     expect(charge).toEqual({
@@ -110,7 +133,7 @@ describe("gateway do Pix", () => {
       status: "waiting_payment",
     });
 
-    const call = calls.find((c) => c.init?.method === "POST")!;
+    const call = calls.find((c) => c.url.includes("umbrellapag") && c.init?.method === "POST")!;
     const headers = call.init!.headers as Record<string, string>;
     expect(headers["x-api-key"]).toBe("umb-key-1234567890");
     expect(headers["User-Agent"]).toBe("UMBRELLAB2B/1.0");
@@ -126,12 +149,26 @@ describe("gateway do Pix", () => {
     expect(body.customer.address).toMatchObject({ streetNumber: "10", state: "SP", country: "BR" });
   });
 
-  it("sem chave da Umbrella, continua na PixGate (deploy não derruba o checkout)", async () => {
-    settings.set("pixgate_api_key", "pg-key-1234567890");
+  it("gateway escolhido sem chave: usa o outro para o checkout não parar", async () => {
+    settings.set("umbrella_api_key", "umb-key-1234567890");
     const { createPix, getPixGatewayState } = await load();
-    const state = await getPixGatewayState();
-    expect(state).toMatchObject({ selected: "umbrella", active: "pixgate" });
-    expect((await createPix(pixInput)).id).toBe("pg-1");
+    expect(await getPixGatewayState()).toMatchObject({ selected: "pixgate", active: "umbrella" });
+    expect((await createPix(pixInput)).id).toBe("um_tx-um-1");
+  });
+
+  it("chave da PixGate salva no painel tem prioridade sobre o secret", async () => {
+    vi.stubEnv("PIXGATE_API_KEY", "pg-secret-1234567890");
+    const { savePixgateKey, getPixgateKeySource } = await import("@/lib/pixgate.server");
+    expect(await getPixgateKeySource()).toEqual({ key: "pg-secret-1234567890", source: "secret" });
+    await savePixgateKey("pg-painel-1234567890");
+    expect(await getPixgateKeySource()).toEqual({ key: "pg-painel-1234567890", source: "admin" });
+
+    const { createPix } = await load();
+    await createPix(pixInput);
+    expect((calls[0]!.init!.headers as Record<string, string>)["Apikey"]).toBe(
+      "pg-painel-1234567890",
+    );
+    vi.unstubAllEnvs();
   });
 
   it("troca pelo painel nos dois sentidos e vale no próximo Pix", async () => {
@@ -157,6 +194,7 @@ describe("gateway do Pix", () => {
     settings.set("umbrella_api_key", "umb-key-1234567890");
     settings.set("pixgate_api_key", "pg-key-1234567890");
     const { createPix, fetchPixStatus, savePixGateway } = await load();
+    await savePixGateway("umbrella");
     const um = await createPix(pixInput);
 
     await savePixGateway("pixgate");
@@ -184,6 +222,33 @@ describe("gateway do Pix", () => {
     expect(umbrellaQrcode({ pix: "C" })).toBe("C");
     expect(umbrellaQrcode({ pix: null, qrCode: "D" })).toBe("D");
     expect(umbrellaQrcode({ pix: null, qrCode: null })).toBeNull();
+  });
+});
+
+describe("testar chave (sem gerar pedido)", () => {
+  it("PixGate: chave aceita e chave recusada, sem chamar o cashin", async () => {
+    settings.set("pixgate_api_key", "pg-key-1234567890");
+    const { testPixgateKey } = await import("@/lib/pixgate.server");
+    expect(await testPixgateKey()).toEqual({ ok: true, status: 404 });
+
+    vi.resetModules();
+    settings.set("pixgate_api_key", "pg-invalida-123456");
+    const fresh = await import("@/lib/pixgate.server");
+    expect(await fresh.testPixgateKey()).toMatchObject({ ok: false, status: 403 });
+    expect(calls.some((c) => c.url.includes("/v1/cashin"))).toBe(false);
+  });
+
+  it("PixGate sem chave: avisa sem chamar a API", async () => {
+    const { testPixgateKey } = await import("@/lib/pixgate.server");
+    expect(await testPixgateKey()).toMatchObject({ ok: false });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("Umbrella: só consulta, nunca cria transação", async () => {
+    settings.set("umbrella_api_key", "umb-key-1234567890");
+    const { testUmbrellaKey } = await import("@/lib/umbrella.server");
+    expect(await testUmbrellaKey()).toEqual({ ok: true, status: 404 });
+    expect(calls.every((c) => !c.init?.method || c.init.method === "GET")).toBe(true);
   });
 });
 

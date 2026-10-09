@@ -5,34 +5,43 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  deletePixgateKeyFn,
   deleteUmbrellaKeyFn,
   getPixGatewayStatus,
+  savePixgateKeyFn,
   saveUmbrellaKeyFn,
   setPixGatewayFn,
+  testPixgateFn,
   testUmbrellaFn,
 } from "@/lib/pix-gateway.functions";
 
-type Gateway = "umbrella" | "pixgate";
+type Gateway = "pixgate" | "umbrella";
+type KeyInfo = { key: string | null; source: "admin" | "secret" | null };
 type Status = {
   selected: Gateway;
   active: Gateway;
   configured: Record<Gateway, boolean>;
-  umbrellaKey: string | null;
-  umbrellaSource: "admin" | "secret" | null;
+  keys: Record<Gateway, KeyInfo>;
 };
 
-const LABEL: Record<Gateway, string> = { umbrella: "Umbrella", pixgate: "PixGate" };
+const LABEL: Record<Gateway, string> = { pixgate: "PixGate", umbrella: "Umbrella" };
+const SECRET: Record<Gateway, string> = {
+  pixgate: "PIXGATE_API_KEY",
+  umbrella: "UMBRELLA_API_KEY",
+};
 
-/** Escolha do gateway do Pix (Umbrella ou PixGate) + chave da Umbrella. */
+/** Escolha do gateway do Pix (PixGate ou Umbrella) + chave de cada um. */
 export function PixGatewayCard({ password }: { password: string }) {
   const statusFn = useServerFn(getPixGatewayStatus);
   const setFn = useServerFn(setPixGatewayFn);
-  const saveFn = useServerFn(saveUmbrellaKeyFn);
-  const deleteFn = useServerFn(deleteUmbrellaKeyFn);
-  const testFn = useServerFn(testUmbrellaFn);
+  const savePixgateFn = useServerFn(savePixgateKeyFn);
+  const deletePixgateFn = useServerFn(deletePixgateKeyFn);
+  const saveUmbrellaFn = useServerFn(saveUmbrellaKeyFn);
+  const deleteUmbrellaFn = useServerFn(deleteUmbrellaKeyFn);
+  const testPixgate = useServerFn(testPixgateFn);
+  const testUmbrella = useServerFn(testUmbrellaFn);
 
   const [status, setStatus] = useState<Status | null>(null);
-  const [key, setKey] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -47,13 +56,16 @@ export function PixGatewayCard({ password }: { password: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [password]);
 
-  const run = async (label: string, fn: () => Promise<string>) => {
+  /** Executa a ação e mostra o resultado; devolve se deu certo. */
+  const run = async (label: string, fn: () => Promise<string>): Promise<boolean> => {
     setBusy(label);
     setMsg(null);
     try {
       setMsg(await fn());
+      return true;
     } catch (e) {
       setMsg(e instanceof Error && e.message ? e.message : "Algo deu errado. Tente de novo.");
+      return false;
     } finally {
       setBusy(null);
       refresh();
@@ -66,35 +78,29 @@ export function PixGatewayCard({ password }: { password: string }) {
       return `Pronto: os próximos Pix saem pela ${LABEL[gateway]}. Pedidos já gerados continuam no gateway de origem.`;
     });
 
-  const save = () =>
-    run("save", async () => {
-      await saveFn({ data: { password, key: key.trim() } });
-      setKey("");
-      return "Chave da Umbrella salva.";
+  const saveKey = (gateway: Gateway, key: string) =>
+    run(`save-${gateway}`, async () => {
+      const fn = gateway === "pixgate" ? savePixgateFn : saveUmbrellaFn;
+      await fn({ data: { password, key } });
+      return `Chave da ${LABEL[gateway]} salva. Os próximos Pix da ${LABEL[gateway]} já usam esta chave.`;
     });
 
-  const remove = () =>
-    run("delete", async () => {
-      await deleteFn({ data: { password } });
-      return "Chave da Umbrella apagada do painel.";
+  const deleteKey = (gateway: Gateway) =>
+    run(`delete-${gateway}`, async () => {
+      const fn = gateway === "pixgate" ? deletePixgateFn : deleteUmbrellaFn;
+      await fn({ data: { password } });
+      return `Chave da ${LABEL[gateway]} apagada do painel.`;
     });
 
-  const test = () =>
-    run("test", async () => {
-      const r = await testFn({ data: { password } });
+  /** Consulta o gateway com a chave em uso, sem gerar Pix nem pedido. */
+  const testKey = (gateway: Gateway) =>
+    run(`test-${gateway}`, async () => {
+      const fn = gateway === "pixgate" ? testPixgate : testUmbrella;
+      const r = await fn({ data: { password } });
       return r.ok
-        ? "Chave da Umbrella aceita."
-        : `Chave da Umbrella com problema: ${r.error ?? `erro ${r.status ?? ""}`}`;
+        ? `Chave da ${LABEL[gateway]} aceita (teste sem gerar pedido).`
+        : `Chave da ${LABEL[gateway]} com problema: ${r.error ?? `erro ${r.status ?? ""}`}`;
     });
-
-  const keyLabel =
-    status === null
-      ? "…"
-      : status.umbrellaSource === "admin"
-        ? "Chave do painel"
-        : status.umbrellaSource === "secret"
-          ? "Secret do Lovable"
-          : "Sem chave";
 
   return (
     <Card className="mt-3 p-5 flex flex-col gap-4">
@@ -104,8 +110,8 @@ export function PixGatewayCard({ password }: { password: string }) {
           <div>
             <div className="font-medium">Gateway do Pix</div>
             <div className="text-xs text-muted-foreground">
-              Escolha quem gera os próximos Pix. A troca vale na hora; pedidos já gerados continuam
-              sendo confirmados pelo gateway em que foram criados.
+              Escolha quem gera os próximos Pix (padrão: PixGate). A troca vale na hora; pedidos já
+              gerados continuam sendo confirmados pelo gateway em que foram criados.
             </div>
           </div>
         </div>
@@ -115,7 +121,7 @@ export function PixGatewayCard({ password }: { password: string }) {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        {(["umbrella", "pixgate"] as const).map((g) => (
+        {(["pixgate", "umbrella"] as const).map((g) => (
           <Button
             key={g}
             size="sm"
@@ -136,50 +142,90 @@ export function PixGatewayCard({ password }: { password: string }) {
         </p>
       )}
 
-      <div className="flex flex-col gap-2 border-t pt-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="text-sm font-medium">Chave da API Umbrella</div>
-          <span
-            className={`text-xs whitespace-nowrap ${status?.umbrellaSource ? "text-emerald-600" : "text-destructive"}`}
-          >
-            {keyLabel}
-          </span>
-        </div>
-        <div className="text-xs text-muted-foreground">
-          A chave salva aqui tem prioridade. Sem ela, vale o secret UMBRELLA_API_KEY do Lovable.
-        </div>
-        <Input
-          type="password"
-          autoComplete="off"
-          placeholder={
-            status?.umbrellaKey ? `Chave em uso (${status.umbrellaKey})` : "Chave da API Umbrella"
-          }
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
+      {(["pixgate", "umbrella"] as const).map((g) => (
+        <KeySection
+          key={g}
+          gateway={g}
+          info={status?.keys[g] ?? null}
+          loading={status === null}
+          busy={busy}
+          onSave={(key) => saveKey(g, key)}
+          onDelete={() => deleteKey(g)}
+          onTest={() => testKey(g)}
         />
-        <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" disabled={key.trim().length < 10 || !!busy} onClick={save}>
-            {busy === "save" ? "Salvando…" : "Salvar chave"}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={!status?.umbrellaSource || !!busy}
-            onClick={test}
-          >
-            {busy === "test" ? "Testando…" : "Testar chave"}
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            disabled={status?.umbrellaSource !== "admin" || !!busy}
-            onClick={remove}
-          >
-            {busy === "delete" ? "Apagando…" : "Apagar chave do painel"}
-          </Button>
-        </div>
-      </div>
+      ))}
       {msg && <p className="text-xs">{msg}</p>}
     </Card>
+  );
+}
+
+function KeySection({
+  gateway,
+  info,
+  loading,
+  busy,
+  onSave,
+  onDelete,
+  onTest,
+}: {
+  gateway: Gateway;
+  info: KeyInfo | null;
+  loading: boolean;
+  busy: string | null;
+  onSave: (key: string) => Promise<boolean>;
+  onDelete: () => Promise<boolean>;
+  onTest: () => Promise<boolean>;
+}) {
+  const [key, setKey] = useState("");
+  const label = loading
+    ? "…"
+    : info?.source === "admin"
+      ? "Chave do painel"
+      : info?.source === "secret"
+        ? "Secret do Lovable"
+        : "Sem chave";
+
+  return (
+    <div className="flex flex-col gap-2 border-t pt-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="text-sm font-medium">Chave da API {LABEL[gateway]}</div>
+        <span
+          className={`text-xs whitespace-nowrap ${info?.source ? "text-emerald-600" : "text-destructive"}`}
+        >
+          {label}
+        </span>
+      </div>
+      <div className="text-xs text-muted-foreground">
+        A chave salva aqui tem prioridade. Sem ela, vale o secret {SECRET[gateway]} do Lovable.
+      </div>
+      <Input
+        type="password"
+        autoComplete="off"
+        aria-label={`Chave da API ${LABEL[gateway]}`}
+        placeholder={info?.key ? `Chave em uso (${info.key})` : `Chave da API ${LABEL[gateway]}`}
+        value={key}
+        onChange={(e) => setKey(e.target.value)}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          disabled={key.trim().length < 10 || !!busy}
+          onClick={() => onSave(key.trim()).then((ok) => ok && setKey(""))}
+        >
+          {busy === `save-${gateway}` ? "Salvando…" : `Salvar chave ${LABEL[gateway]}`}
+        </Button>
+        <Button size="sm" variant="outline" disabled={!info?.source || !!busy} onClick={onTest}>
+          {busy === `test-${gateway}` ? "Testando…" : `Testar chave ${LABEL[gateway]}`}
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          disabled={info?.source !== "admin" || !!busy}
+          onClick={onDelete}
+        >
+          {busy === `delete-${gateway}` ? "Apagando…" : "Apagar chave do painel"}
+        </Button>
+      </div>
+    </div>
   );
 }
